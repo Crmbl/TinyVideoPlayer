@@ -6,7 +6,8 @@
         xmlns:vlc="clr-namespace:Vlc.DotNet.Wpf;assembly=Vlc.DotNet.Wpf"
         Style="{StaticResource WindowStyle}"
         mc:Ignorable="d">
-    <Grid>
-        <vlc:VlcControl x:Name="VideoControl" />
+    <Grid x:Name="MainGrid">
+        <Canvas x:Name="DropZone" Style="{StaticResource CanvasStyle}" />
+        <vlc:VlcControl x:Name="VideoControl" Style="{StaticResource VlcStyle}" />
     </Grid>
 </Window>
