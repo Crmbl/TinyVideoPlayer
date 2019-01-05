@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -15,7 +14,7 @@ namespace TinyVideoPlayer
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window/*, INotifyPropertyChanged*/
     {
         #region DLL imports 
 
@@ -24,7 +23,7 @@ namespace TinyVideoPlayer
 
         #endregion // DLL imports
 
-        #region Properties
+        #region Constants
 
         /// <summary>
         /// Defines the zoom limit min.
@@ -41,27 +40,54 @@ namespace TinyVideoPlayer
         /// </summary>
         private const double ZoomRatio = 0.1;
 
+        #endregion //Constants
+
+        #region Properties
+
         /// <summary>
         /// The mouse position.
         /// </summary>
-        private Point MousePosition;
+        private Point MousePosition { get; set; }
 
         /// <summary>
         /// The origin position.
         /// </summary>
-        private Point OriginPosition;
+        private Point OriginPosition { get; set; }
 
         /// <summary>
         /// Defines the mouse speed when starting the drag event.
         /// </summary>
-        private UInt32 OriginMouseSpeed { get; set; }
+        private uint OriginMouseSpeed { get; set; }
 
         /// <summary>
-        /// Defines the viewmodel.
+        /// Defines is repeating.
         /// </summary>
-        private readonly MainViewModel ViewModel;
+        public bool IsRepeating { get; set; }
+
+        /// <summary>
+        /// Current playing file.
+        /// </summary>
+        public Uri CurrentFile { get; set; }
 
         #endregion //Properties
+
+        //#region NotifyPropertyChanged
+
+        ///// <summary>
+        ///// The <see cref="INotifyPropertyChanged"/> event handler.
+        ///// </summary>
+        //public event PropertyChangedEventHandler PropertyChanged;
+
+        ///// <summary>
+        ///// Raise the modification event.
+        ///// </summary>
+        ///// <param name="propertyName"></param>
+        //internal void NotifyPropertyChanged(string propertyName = "")
+        //{
+        //    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        //}
+
+        //#endregion //NotifyPropertyChanged
 
         /// <summary>
         /// Default constructor.
@@ -69,9 +95,8 @@ namespace TinyVideoPlayer
         public MainWindow()
         {
             InitializeComponent();
-            ViewModel = new MainViewModel();
 
-            #region Init controls
+            IsRepeating = true;
 
             var vlcLibDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "libvlc", IntPtr.Size == 4 ? "win-x86" : "win-x64"));
             var options = new []
@@ -119,21 +144,18 @@ namespace TinyVideoPlayer
             DropZone.Drop += DropZone_Drop;
             DropZone.SizeChanged += DropZone_SizeChanged;
             DropZone.MouseLeftButtonDown += DropZone_MouseLeftButtonDown;
-            DropZone.MouseLeftButtonUp += DropZone_MouseLeftButtonUp;
-            DropZone.MouseMove += DropZone_MouseMove;
+            VideoControl.MouseMove += VideoControl_MouseMove;
+            VideoControl.MouseLeftButtonUp += DropZone_MouseLeftButtonUp;
 
-            #endregion //Init controls
-
-            //var pathToVideo = @"C:\Users\SCHAEFAX\Documents\Perso\testVid.webm";
-            //var test = new FileInfo(pathToVideo);
-            //pathToVideo = "http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_h264.mov";
-            //this.VideoControl.SourceProvider.MediaPlayer.Play("http://www.youtube.com/watch?v=vpU6jz301MQ");
+            //CurrentFile = new Uri(@"C:\Users\axels\Downloads\Nouveau dossier\_.webm");
+            //CurrentFile = new Uri("http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_h264.mov");
+            //VideoControl.SourceProvider.MediaPlayer.Play(CurrentFile);
         }
 
         /// <summary>
         /// Used for the repeat feature.
         /// </summary>
-        delegate void VlcRepeatDelegate(string mnr, string[] pars); //Uri fileUri
+        delegate void VlcRepeatDelegate(Uri fileUri, string[] pars);
 
         #region Events
 
@@ -142,10 +164,10 @@ namespace TinyVideoPlayer
         /// </summary>
         private void MediaPlayer_EndReached(object sender, VlcMediaPlayerEndReachedEventArgs e)
         {
-            if (!ViewModel.IsRepeating) return;
+            if (!IsRepeating) return;
 
             VlcRepeatDelegate vlcDelegate = VideoControl.SourceProvider.MediaPlayer.Play;
-            vlcDelegate.BeginInvoke(ViewModel.CurrentFile, new string[] { }, null, null);
+            vlcDelegate.BeginInvoke(CurrentFile, new string[] {}, null, null);
         }
 
         /// <summary>
@@ -252,45 +274,27 @@ namespace TinyVideoPlayer
         /// </summary>
         private void DropZone_Drop(object sender, DragEventArgs e)
         {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                var files = (string[])e.Data.GetData(DataFormats.FileDrop);
-                if (files == null || files.Length > 1) return;
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+            if (files == null || files.Length > 1) return;
 
-                //var videoControl = canvas.Children.Cast<UIElement>().FirstOrDefault(c => c is VlcControl);
-                //if (!(videoControl is VlcControl video)) return;
-
-                ViewModel.CurrentFile = files.First();
-                if (ViewModel.CurrentFile.ToLower().StartsWith("https"))
-                {
-                    ViewModel.CurrentFile = ViewModel.CurrentFile.Replace("https", "http");
-                }
-                if (ViewModel.CurrentFile.ToLower().StartsWith("http"))
-                {
-                    VideoControl.SourceProvider.MediaPlayer.Play(ViewModel.CurrentFile);
-                }
-                else if (Regex.Match(ViewModel.CurrentFile.ToLower(), "^[a-z]:").Success)
-                {
-                    VideoControl.SourceProvider.MediaPlayer.Play(new FileInfo(ViewModel.CurrentFile));
-                }
-                else
-                    throw new Exception($"Not handled file case when dropping : {ViewModel.CurrentFile}");
-            }
+            CurrentFile = new Uri(files.First());
+            VideoControl.SourceProvider.MediaPlayer.Play(CurrentFile);
         }
 
         /// <summary>
         /// Move the media element with the mouse.
         /// </summary>
-        private void DropZone_MouseMove(object sender, MouseEventArgs e)
+        private void VideoControl_MouseMove(object sender, MouseEventArgs e)
         {
-            // TODO NOT WORKING
             if (!VideoControl.IsMouseCaptured) return;
 
             var scaleTransform = (ScaleTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is ScaleTransform);
             var controlHeight = VideoControl.ActualHeight * scaleTransform.ScaleY;
             var controlWidth = VideoControl.ActualWidth * scaleTransform.ScaleX;
 
-            Point relativePoint = VideoControl.TransformToAncestor(DropZone).Transform(new Point(0, 0));
+            //TransformToAncestor
+            Point relativePoint = VideoControl.TransformToVisual(DropZone).Transform(new Point(0, 0));
             var mathRelativeY = Math.Round(relativePoint.Y, MidpointRounding.AwayFromZero);
             var mathRelativeX = Math.Round(relativePoint.X, MidpointRounding.AwayFromZero);
             var mathMouseY = Math.Round(MousePosition.Y, MidpointRounding.AwayFromZero);
@@ -317,8 +321,7 @@ namespace TinyVideoPlayer
             translateTransform.Y = OriginPosition.Y + vector.Y;
 
             MousePosition = e.GetPosition(DropZone);
-            OriginPosition = new Point(Math.Round(translateTransform.X, MidpointRounding.AwayFromZero),
-                Math.Round(translateTransform.Y, MidpointRounding.AwayFromZero));
+            OriginPosition = new Point(Math.Round(translateTransform.X, MidpointRounding.AwayFromZero), Math.Round(translateTransform.Y, MidpointRounding.AwayFromZero));
         }
 
         /// <summary>
@@ -328,7 +331,7 @@ namespace TinyVideoPlayer
         {
             VideoControl.ReleaseMouseCapture();
             VideoControl.Cursor = Cursors.Arrow;
-            //SystemParametersInfo(0x0071, 0, OriginMouseSpeed, 0);
+            SystemParametersInfo(0x0071, 0, OriginMouseSpeed, 0);
         }
 
         /// <summary>
@@ -347,11 +350,10 @@ namespace TinyVideoPlayer
 
             var translateTransform = (TranslateTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is TranslateTransform);
             MousePosition = e.GetPosition(DropZone);
-            OriginPosition = new Point(Math.Round(translateTransform.X, MidpointRounding.AwayFromZero),
-                Math.Round(translateTransform.Y, MidpointRounding.AwayFromZero));
+            OriginPosition = new Point(Math.Round(translateTransform.X, MidpointRounding.AwayFromZero), Math.Round(translateTransform.Y, MidpointRounding.AwayFromZero));
 
             OriginMouseSpeed = (uint)System.Windows.Forms.SystemInformation.MouseSpeed;
-            //SystemParametersInfo(0x0071, 0, 3, 0);
+            SystemParametersInfo(0x0071, 0, 3, 0);
         }
 
         #endregion //Events
