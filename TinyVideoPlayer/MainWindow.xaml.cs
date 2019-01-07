@@ -103,49 +103,17 @@ namespace TinyVideoPlayer
             OriginMouseSpeed = (uint)System.Windows.Forms.SystemInformation.MouseSpeed;
 
             var vlcLibDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "libvlc", IntPtr.Size == 4 ? "win-x86" : "win-x64"));
-            var options = new []
-            {
-                /*https://wiki.videolan.org/Documentation:Command_line/ */
-                "--file-logging", "-vvv", "--extraintf=logger", "--logfile=Logs.log" 
-            };
+            var options = new [] { /*https://wiki.videolan.org/Documentation:Command_line/*/ /*"--file-logging", "-vvv", "--extraintf=logger", "--logfile=Logs.log"*/ "" };
 
             VideoControl.SourceProvider.CreatePlayer(vlcLibDirectory, options);
-
-            #region Needed?
-            //VideoControl.SetBinding(Canvas.TopProperty, new MultiBinding
-            //{
-            //    Converter = new CenterConverter(),
-            //    ConverterParameter = "top",
-            //    Mode = BindingMode.TwoWay,
-            //    Bindings = {
-            //        new Binding("ActualWidth") { Source = DropZone },
-            //        new Binding("ActualHeight") { Source = DropZone },
-            //        new Binding("ActualWidth") { Source = VideoControl },
-            //        new Binding("ActualHeight") { Source = VideoControl }
-            //    }
-            //});
-            //VideoControl.SetBinding(Canvas.LeftProperty, new MultiBinding
-            //{
-            //    Converter = new CenterConverter(),
-            //    ConverterParameter = "left",
-            //    Mode = BindingMode.TwoWay,
-            //    Bindings = {
-            //        new Binding("ActualWidth") { Source = DropZone },
-            //        new Binding("ActualHeight") { Source = DropZone },
-            //        new Binding("ActualWidth") { Source = VideoControl },
-            //        new Binding("ActualHeight") { Source = VideoControl }
-            //    }
-            //});
-            #endregion Needed?
-
             VideoControl.RenderTransform = new TransformGroup { Children = new TransformCollection { new TranslateTransform(), new ScaleTransform() } };
             VideoControl.SourceProvider.MediaPlayer.EndReached += MediaPlayer_EndReached;
             DropZone.MouseWheel += DropZone_MouseWheel;
             DropZone.Drop += DropZone_Drop;
             DropZone.SizeChanged += DropZone_SizeChanged;
-            DropZone.MouseLeftButtonDown += DropZone_MouseLeftButtonDown;
-            DropZone.MouseMove += DropZone_MouseMove;
-            DropZone.MouseLeftButtonUp += DropZone_MouseLeftButtonUp;
+            DropZone.PreviewMouseLeftButtonDown += DropZone_PreviewMouseLeftButtonDown;
+            DropZone.PreviewMouseMove += DropZone_PreviewMouseMove;
+            DropZone.PreviewMouseLeftButtonUp += DropZone_PreviewMouseLeftButtonUp;
             DropZone.MouseDown += DropZone_MouseDown;
             this.PreviewMouseRightButtonDown += MainWindow_PreviewMouseRightButtonDown;
             this.PreviewMouseMove += MainWindow_PreviewMouseMove;
@@ -345,7 +313,7 @@ namespace TinyVideoPlayer
         /// <summary>
         /// Move the media element with the mouse.
         /// </summary>
-        private void DropZone_MouseMove(object sender, MouseEventArgs e)
+        private void DropZone_PreviewMouseMove(object sender, MouseEventArgs e)
         {
             if (DropZone.IsMouseCaptured)
             {
@@ -389,7 +357,7 @@ namespace TinyVideoPlayer
         /// <summary>
         /// Release the dragged media element.
         /// </summary>
-        private void DropZone_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        private void DropZone_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             DropZone.ReleaseMouseCapture();
             VideoControl.Cursor = Cursors.Arrow;
@@ -399,7 +367,7 @@ namespace TinyVideoPlayer
         /// <summary>
         /// Defines the media element to drag.
         /// </summary>
-        private void DropZone_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void DropZone_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             var scaleTransform = (ScaleTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is ScaleTransform);
             var elementHeight = VideoControl.ActualHeight * scaleTransform.ScaleY;
