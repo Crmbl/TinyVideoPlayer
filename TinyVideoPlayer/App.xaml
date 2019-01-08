@@ -35,6 +35,11 @@
             <Setter Property="TextWrapping" Value="WrapWithOverflow" />
         </Style>
 
+        <Style x:Key="BorderStyle" TargetType="Border">
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="#a8a8a8" />
+        </Style>
+
         <Style x:Key="ButtonImageBase" TargetType="Button">
             <Setter Property="Height" Value="45" />
             <Setter Property="Width" Value="45" />
@@ -161,5 +166,7 @@
         <BitmapImage x:Key="MuteImage" UriSource="/Resources/Images/mute.png" />
         <BitmapImage x:Key="VolumeImage" UriSource="/Resources/Images/volume.png" />
         <BitmapImage x:Key="MaximizeImage" UriSource="/Resources/Images/maximize.png" />
+        <BitmapImage x:Key="PauseImage" UriSource="/Resources/Images/pause.ico" />
+        <BitmapImage x:Key="PlayImage" UriSource="/Resources/Images/play.ico" />
     </Application.Resources>
 </Application>

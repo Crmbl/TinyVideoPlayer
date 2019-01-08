@@ -109,6 +109,7 @@ namespace TinyVideoPlayer
             VideoControl.SourceProvider.CreatePlayer(vlcLibDirectory, options);
             VideoControl.RenderTransform = new TransformGroup { Children = new TransformCollection { new TranslateTransform(), new ScaleTransform() } };
             VideoControl.SourceProvider.MediaPlayer.EndReached += MediaPlayer_EndReached;
+            VideoControl.SourceProvider.MediaPlayer.MediaChanged += MediaPlayer_MediaChanged;
             VideoControl.SourceProvider.MediaPlayer.PositionChanged += MediaPlayer_PositionChanged;
             VideoControl.SourceProvider.MediaPlayer.EncounteredError += MediaPlayer_EncounteredError;
             DropZone.MouseWheel += DropZone_MouseWheel;
@@ -130,7 +131,9 @@ namespace TinyVideoPlayer
             ToggleMuteButton.Click += MediaButton_Click;
             VolumeSlider.ValueChanged += VolumeSlider_ValueChanged;
             TimeSlider.ValueChanged += TimeSlider_ValueChanged;
-            TimeSlider.ManipulationCompleted += TimeSlider_ManipulationCompleted;
+            TimeSlider.PreviewMouseDown += TimeSlider_PreviewMouseDown;
+            TimeSlider.PreviewMouseUp += TimeSlider_PreviewMouseUp;
+            ThumbButton.Click += ThumbButton_Click;
             this.PreviewMouseRightButtonDown += MainWindow_PreviewMouseRightButtonDown;
             this.PreviewMouseMove += MainWindow_PreviewMouseMove;
             this.MouseEnter += MainWindow_MouseEnter;
@@ -188,14 +191,10 @@ namespace TinyVideoPlayer
             ToggleMuteButton.Visibility = Visibility.Hidden;
             DropText.Visibility = Visibility.Visible;
             TimeSlider.Visibility = Visibility.Hidden;
+            ThumbButton.Visibility = Visibility.Hidden;
             ToggleMuteButton.Tag = Application.Current.Resources["VolumeImage"] as BitmapImage;
 
             #endregion //Init Visibility states
-        }
-
-        private void TimeSlider_ManipulationCompleted(object sender, ManipulationCompletedEventArgs e)
-        {
-            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -244,7 +243,23 @@ namespace TinyVideoPlayer
         /// </summary>
         private void MediaPlayer_PositionChanged(object sender, VlcMediaPlayerPositionChangedEventArgs e)
         {
-            Dispatcher.Invoke(() => { TimeSlider.Value = VideoControl.SourceProvider.MediaPlayer.Position; });
+            Dispatcher.Invoke(() =>
+            {
+                if (!TimeSlider.IsMouseCaptured)
+                    TimeSlider.Value = VideoControl.SourceProvider.MediaPlayer.Position;
+            });
+        }
+
+        /// <summary>
+        /// Shows the thumbnail buttons when there is a media.
+        /// </summary>
+        private void MediaPlayer_MediaChanged(object sender, VlcMediaPlayerMediaChangedEventArgs e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (ThumbButton.Visibility != Visibility.Visible)
+                    ThumbButton.Visibility = Visibility.Visible;
+            });
         }
 
         /// <summary>
@@ -274,9 +289,15 @@ namespace TinyVideoPlayer
             if (e.ChangedButton == MouseButton.Left)
             {
                 if (VideoControl.SourceProvider.MediaPlayer.IsPlaying())
+                {
                     VideoControl.SourceProvider.MediaPlayer.Pause();
+                    ThumbButton.ImageSource = Application.Current.Resources["PlayImage"] as BitmapImage;
+                }
                 else
+                {
                     VideoControl.SourceProvider.MediaPlayer.Play();
+                    ThumbButton.ImageSource = Application.Current.Resources["PauseImage"] as BitmapImage;
+                }
             }
             else if (e.ChangedButton == MouseButton.Right)
             {
@@ -363,43 +384,38 @@ namespace TinyVideoPlayer
         /// </summary>
         private void DropZone_PreviewMouseMove(object sender, MouseEventArgs e)
         {
-            if (DropZone.IsMouseCaptured)
+            if (!DropZone.IsMouseCaptured) return;
+           
+            var scaleTransform = (ScaleTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is ScaleTransform);
+            var controlHeight = VideoControl.ActualHeight * scaleTransform.ScaleY;
+            var controlWidth = VideoControl.ActualWidth * scaleTransform.ScaleX;
+
+            Point relativePoint = VideoControl.TransformToVisual(DropZone).Transform(new Point(0, 0));
+            var mathRelativeY = Math.Round(relativePoint.Y, MidpointRounding.AwayFromZero);
+            var mathRelativeX = Math.Round(relativePoint.X, MidpointRounding.AwayFromZero);
+            var mathMouseY = Math.Round(MousePosition.Y, MidpointRounding.AwayFromZero);
+            var mathMouseX = Math.Round(MousePosition.X, MidpointRounding.AwayFromZero);
+
+            Vector vector = new Vector { X = 0, Y = 0 };
+            if (controlHeight >= DropZone.ActualHeight)
             {
-                var scaleTransform = (ScaleTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is ScaleTransform);
-                var controlHeight = VideoControl.ActualHeight * scaleTransform.ScaleY;
-                var controlWidth = VideoControl.ActualWidth * scaleTransform.ScaleX;
-
-                Point relativePoint = VideoControl.TransformToVisual(DropZone).Transform(new Point(0, 0));
-                var mathRelativeY = Math.Round(relativePoint.Y, MidpointRounding.AwayFromZero);
-                var mathRelativeX = Math.Round(relativePoint.X, MidpointRounding.AwayFromZero);
-                var mathMouseY = Math.Round(MousePosition.Y, MidpointRounding.AwayFromZero);
-                var mathMouseX = Math.Round(MousePosition.X, MidpointRounding.AwayFromZero);
-
-                Vector vector = new Vector { X = 0, Y = 0 };
-                if (controlHeight >= DropZone.ActualHeight)
-                {
-                    var vectorY = Math.Round(e.GetPosition(DropZone).Y, MidpointRounding.AwayFromZero) - mathMouseY;
-                    if (mathRelativeY <= 0 && mathRelativeY + vectorY <= 0 && vectorY > 0 || mathRelativeY + controlHeight >= DropZone.ActualHeight && mathRelativeY + controlHeight + vectorY >= DropZone.ActualHeight && vectorY < 0)
-                        vector.Y = vectorY;
-                }
-                if (controlWidth >= DropZone.ActualWidth)
-                {
-                    var vectorX = Math.Round(e.GetPosition(DropZone).X, MidpointRounding.AwayFromZero) - mathMouseX;
-                    if (mathRelativeX <= 0 && mathRelativeX + vectorX <= 0 && vectorX > 0 || mathRelativeX + controlWidth >= DropZone.ActualWidth && mathRelativeX + controlWidth + vectorX >= DropZone.ActualWidth && vectorX < 0)
-                        vector.X = vectorX;
-                }
-
-                var translateTransform = (TranslateTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is TranslateTransform);
-                translateTransform.X = OriginPosition.X + vector.X;
-                translateTransform.Y = OriginPosition.Y + vector.Y;
-
-                MousePosition = e.GetPosition(DropZone);
-                OriginPosition = new Point(Math.Round(translateTransform.X, MidpointRounding.AwayFromZero), Math.Round(translateTransform.Y, MidpointRounding.AwayFromZero));
+                var vectorY = Math.Round(e.GetPosition(DropZone).Y, MidpointRounding.AwayFromZero) - mathMouseY;
+                if (mathRelativeY <= 0 && mathRelativeY + vectorY <= 0 && vectorY > 0 || mathRelativeY + controlHeight >= DropZone.ActualHeight && mathRelativeY + controlHeight + vectorY >= DropZone.ActualHeight && vectorY < 0)
+                    vector.Y = vectorY;
             }
-            else
+            if (controlWidth >= DropZone.ActualWidth)
             {
-                //TODO Slow down/up effect
+                var vectorX = Math.Round(e.GetPosition(DropZone).X, MidpointRounding.AwayFromZero) - mathMouseX;
+                if (mathRelativeX <= 0 && mathRelativeX + vectorX <= 0 && vectorX > 0 || mathRelativeX + controlWidth >= DropZone.ActualWidth && mathRelativeX + controlWidth + vectorX >= DropZone.ActualWidth && vectorX < 0)
+                    vector.X = vectorX;
             }
+
+            var translateTransform = (TranslateTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is TranslateTransform);
+            translateTransform.X = OriginPosition.X + vector.X;
+            translateTransform.Y = OriginPosition.Y + vector.Y;
+
+            MousePosition = e.GetPosition(DropZone);
+            OriginPosition = new Point(Math.Round(translateTransform.X, MidpointRounding.AwayFromZero), Math.Round(translateTransform.Y, MidpointRounding.AwayFromZero));
         }
 
         /// <summary>
@@ -615,7 +631,8 @@ namespace TinyVideoPlayer
         /// </summary>
         private void TimeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            //VideoControl.SourceProvider.MediaPlayer.Position = (float)e.NewValue;
+            if (TimeSlider.IsMouseCaptured)
+                VideoControl.SourceProvider.MediaPlayer.Position = (float)e.NewValue;
         }
 
         /// <summary>
@@ -646,6 +663,39 @@ namespace TinyVideoPlayer
 
             VideoControl.SourceProvider.Dispose();
             Application.Current.Shutdown();
+        }
+
+        /// <summary>
+        /// When user click on thumb button.
+        /// </summary>
+        private void ThumbButton_Click(object sender, EventArgs e)
+        {
+            if (VideoControl.SourceProvider.MediaPlayer.IsPlaying())
+            {
+                VideoControl.SourceProvider.MediaPlayer.Pause();
+                ThumbButton.ImageSource = Application.Current.Resources["PlayImage"] as BitmapImage;
+            }
+            else
+            {
+                VideoControl.SourceProvider.MediaPlayer.Play();
+                ThumbButton.ImageSource = Application.Current.Resources["PauseImage"] as BitmapImage;
+            }
+        }
+
+        /// <summary>
+        /// Capture the mouse for the position slider.
+        /// </summary>
+        private void TimeSlider_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            TimeSlider.CaptureMouse();
+        }
+
+        /// <summary>
+        /// Release the mouse for the position slider.
+        /// </summary>
+        private void TimeSlider_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            TimeSlider.ReleaseMouseCapture();
         }
 
         #endregion //Events

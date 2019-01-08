@@ -6,6 +6,17 @@
         xmlns:vlc="clr-namespace:Vlc.DotNet.Wpf;assembly=Vlc.DotNet.Wpf"
         Style="{StaticResource WindowStyle}"
         mc:Ignorable="d">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0" ResizeBorderThickness="5"/>
+    </WindowChrome.WindowChrome>
+    <Window.TaskbarItemInfo>
+        <TaskbarItemInfo>
+            <TaskbarItemInfo.ThumbButtonInfos>
+                <ThumbButtonInfo x:Name="ThumbButton" ImageSource="{StaticResource PauseImage}" />
+            </TaskbarItemInfo.ThumbButtonInfos>
+        </TaskbarItemInfo>
+    </Window.TaskbarItemInfo>
+    <Border Style="{StaticResource BorderStyle}">
     <Grid x:Name="MainGrid">
         <Grid x:Name="MediaGrid" Style="{StaticResource MediaGrid}" Panel.ZIndex="110">
             <Grid.ColumnDefinitions>
@@ -36,4 +47,5 @@
                     Width="{Binding ElementName=DropZone, Path=ActualWidth, Converter={StaticResource OffsetConverter}, ConverterParameter='outside'}"/>
         </Grid>
     </Grid>
+    </Border>
 </Window>
