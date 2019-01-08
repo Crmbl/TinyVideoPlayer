@@ -78,7 +78,7 @@
         </Style>
 
         <Style x:Key="MediaGrid" TargetType="Grid">
-            <Setter Property="MaxWidth" Value="120" />
+            <Setter Property="MaxWidth" Value="195" />
             <Setter Property="VerticalAlignment" Value="Top" />
             <Setter Property="ClipToBounds" Value="True" />
             <Setter Property="Background" Value="Transparent" />
@@ -88,6 +88,15 @@
             <Setter Property="MaxHeight" Value="180" />
             <Setter Property="Width" Value="45" />
             <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="ClipToBounds" Value="True" />
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <Style x:Key="TimeGrid" TargetType="Grid">
+            <Setter Property="MaxHeight" Value="45" />
+            <Setter Property="Width" Value="NaN" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Bottom" />
             <Setter Property="ClipToBounds" Value="True" />
             <Setter Property="Background" Value="Transparent" />
         </Style>
@@ -121,8 +130,6 @@
 
         <Style x:Key="SliderStyleBottom" TargetType="Slider">
             <Setter Property="VerticalAlignment" Value="Bottom" />
-            <Setter Property="Width" 
-            Value="{Binding ElementName=DropZone, Path=ActualWidth, Converter={StaticResource OffsetConverter}, ConverterParameter='outside'}" />
             <Setter Property="Height" Value="45" />
             <Setter Property="Minimum" Value="0" />
             <Setter Property="Maximum" Value="1" />
@@ -132,8 +139,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type Slider}">
                         <Border BorderBrush="#a8a8a8" BorderThickness="1" CornerRadius="5, 5, 0, 0" Background="#dddddd" Padding="{TemplateBinding Padding}">
-                            <Slider Orientation="Horizontal"
-                                    TODO §!!!! MARCHJE PAS!
+                            <Slider Orientation="Horizontal" 
                                     Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Slider}}, Path=Value, Mode=TwoWay}"
                                     Height="18" 
                                     Width="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Slider}}, 
@@ -154,5 +160,6 @@
         <BitmapImage x:Key="FindMediaImage" UriSource="/Resources/Images/folder.png" />
         <BitmapImage x:Key="MuteImage" UriSource="/Resources/Images/mute.png" />
         <BitmapImage x:Key="VolumeImage" UriSource="/Resources/Images/volume.png" />
+        <BitmapImage x:Key="MaximizeImage" UriSource="/Resources/Images/maximize.png" />
     </Application.Resources>
 </Application>

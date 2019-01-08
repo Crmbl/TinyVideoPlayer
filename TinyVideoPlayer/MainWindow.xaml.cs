@@ -10,9 +10,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 using TinyVideoPlayer.Converters;
+using TinyVideoPlayer.Utils;
 using Vlc.DotNet.Core;
 
-//TODO Add maximize tab
 namespace TinyVideoPlayer
 {
     /// <summary>
@@ -78,6 +78,11 @@ namespace TinyVideoPlayer
         /// </summary>
         private Point WindowStartPos { get; set; }
 
+        /// <summary>
+        /// Defines if use the fade animation for the buttons.
+        /// </summary>
+        private bool UseAnimation { get; }
+
         #endregion //Properties
 
         /// <summary>
@@ -88,16 +93,24 @@ namespace TinyVideoPlayer
             InitializeComponent();
 
             IsRepeating = true;
+            UseAnimation = true;
             OriginMouseSpeed = (uint)System.Windows.Forms.SystemInformation.MouseSpeed;
 
             var vlcLibDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "libvlc", IntPtr.Size == 4 ? "win-x86" : "win-x64"));
-            var options = new [] { /*https://wiki.videolan.org/Documentation:Command_line/*/ /*"--file-logging", "-vvv", "--extraintf=logger", "--logfile=Logs.log"*/ "" };
+            var options = new []
+            {
+                /*https://wiki.videolan.org/Documentation:Command_line/*/
+                /*"--file-logging", "-vvv", "--extraintf=logger", "--logfile=Logs.log"*/
+                ""
+            };
 
             #region Events subscribing
 
             VideoControl.SourceProvider.CreatePlayer(vlcLibDirectory, options);
             VideoControl.RenderTransform = new TransformGroup { Children = new TransformCollection { new TranslateTransform(), new ScaleTransform() } };
             VideoControl.SourceProvider.MediaPlayer.EndReached += MediaPlayer_EndReached;
+            VideoControl.SourceProvider.MediaPlayer.PositionChanged += MediaPlayer_PositionChanged;
+            VideoControl.SourceProvider.MediaPlayer.EncounteredError += MediaPlayer_EncounteredError;
             DropZone.MouseWheel += DropZone_MouseWheel;
             DropZone.Drop += DropZone_Drop;
             DropZone.SizeChanged += DropZone_SizeChanged;
@@ -109,10 +122,15 @@ namespace TinyVideoPlayer
             MediaGrid.MouseLeave += MediaGrid_MouseLeave;
             SoundGrid.MouseEnter += SoundGrid_MouseEnter;
             SoundGrid.MouseLeave += SoundGrid_MouseLeave;
+            TimeGrid.MouseEnter += TimeGrid_MouseEnter;
+            TimeGrid.MouseLeave += TimeGrid_MouseLeave;
             ResizeButton.Click += MediaButton_Click;
+            MaximizeButton.Click += MediaButton_Click;
             FindMedia.Click += MediaButton_Click;
             ToggleMuteButton.Click += MediaButton_Click;
             VolumeSlider.ValueChanged += VolumeSlider_ValueChanged;
+            TimeSlider.ValueChanged += TimeSlider_ValueChanged;
+            TimeSlider.ManipulationCompleted += TimeSlider_ManipulationCompleted;
             this.PreviewMouseRightButtonDown += MainWindow_PreviewMouseRightButtonDown;
             this.PreviewMouseMove += MainWindow_PreviewMouseMove;
             this.MouseEnter += MainWindow_MouseEnter;
@@ -158,14 +176,26 @@ namespace TinyVideoPlayer
                     new Binding("ActualHeight") { Source = TimeSlider }
                 }
             });
+
+            #endregion //Init bindings
+
+            #region Init Visibility states
+
             ResizeButton.Visibility = Visibility.Hidden;
             FindMedia.Visibility = Visibility.Hidden;
+            MaximizeButton.Visibility = Visibility.Hidden;
             VolumeSlider.Visibility = Visibility.Hidden;
             ToggleMuteButton.Visibility = Visibility.Hidden;
             DropText.Visibility = Visibility.Visible;
+            TimeSlider.Visibility = Visibility.Hidden;
             ToggleMuteButton.Tag = Application.Current.Resources["VolumeImage"] as BitmapImage;
 
-            #endregion //Init bindings
+            #endregion //Init Visibility states
+        }
+
+        private void TimeSlider_ManipulationCompleted(object sender, ManipulationCompletedEventArgs e)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -205,7 +235,16 @@ namespace TinyVideoPlayer
             if (!IsRepeating) return;
 
             VlcRepeatDelegate vlcDelegate = VideoControl.SourceProvider.MediaPlayer.Play;
+            this.Dispatcher.Invoke(() => { TimeSlider.Value = 0; });
             vlcDelegate.BeginInvoke(CurrentFile, new string[] {}, null, null);
+        }
+
+        /// <summary>
+        /// Handles the slider movement when the video is playing.
+        /// </summary>
+        private void MediaPlayer_PositionChanged(object sender, VlcMediaPlayerPositionChangedEventArgs e)
+        {
+            Dispatcher.Invoke(() => { TimeSlider.Value = VideoControl.SourceProvider.MediaPlayer.Position; });
         }
 
         /// <summary>
@@ -223,45 +262,6 @@ namespace TinyVideoPlayer
                 translateTransform.X = 0;
                 translateTransform.Y = 0;
             }
-
-            #region Dont need?
-
-            //var height = VideoControl.ActualHeight * scaleTransform.ScaleY;
-            //var width = VideoControl.ActualWidth * scaleTransform.ScaleX;
-            //var relativePoint = VideoControl.TranslatePoint(new Point(0, 0), DropZone);
-
-            //var previousHeight = Math.Round(e.PreviousSize.Height, 2);
-            //var previousWidth = Math.Round(e.PreviousSize.Width, 2);
-            //var newHeight = Math.Round(e.NewSize.Height, 2);
-            //var newWidth = Math.Round(e.NewSize.Width, 2);
-
-            //if (e.NewSize.Height > e.PreviousSize.Height)
-            //{
-            //    if (height < DropZone.ActualHeight)
-            //        translateTransform.Y = 0;
-            //    else if (height >= DropZone.ActualHeight)
-            //    {
-            //        if (relativePoint.Y > 0)
-            //            translateTransform.Y -= Math.Round(newHeight - previousHeight, 2);
-            //        else if (relativePoint.Y + height < DropZone.ActualHeight)
-            //            translateTransform.Y += Math.Round(newHeight - previousHeight, 2);
-            //    }
-            //}
-
-            //if (e.NewSize.Width > e.PreviousSize.Width)
-            //{
-            //    if (width < DropZone.ActualWidth)
-            //        translateTransform.X = 0;
-            //    else if (width >= DropZone.ActualWidth)
-            //    {
-            //        if (relativePoint.X > 0)
-            //            translateTransform.X -= Math.Round(newWidth - previousWidth, 2);
-            //        else if (relativePoint.X + width < DropZone.ActualWidth)
-            //            translateTransform.X += Math.Round(newWidth - previousWidth, 2);
-            //    }
-            //}
-
-            #endregion //Dont need?
         }
 
         /// <summary>
@@ -440,7 +440,8 @@ namespace TinyVideoPlayer
                 var result = dialog.ShowDialog();
                 if (result != null && !result.Value) return;
 
-                Play(new Uri(dialog.FileName));
+                CurrentFile = new Uri(dialog.FileName);
+                Play(CurrentFile);
             }
         }
 
@@ -451,8 +452,18 @@ namespace TinyVideoPlayer
         {
             if (!VideoControl.SourceProvider.MediaPlayer.CouldPlay) return;
 
-            ResizeButton.Visibility = Visibility.Visible;
-            FindMedia.Visibility = Visibility.Visible;
+            if (UseAnimation)
+            {
+                AnimationTools.FadeIn(ResizeButton);
+                AnimationTools.FadeIn(FindMedia);
+                AnimationTools.FadeIn(MaximizeButton);
+            }
+            else
+            {
+                ResizeButton.Visibility = Visibility.Visible;
+                FindMedia.Visibility = Visibility.Visible;
+                MaximizeButton.Visibility = Visibility.Visible;
+            }
         }
 
         /// <summary>
@@ -460,17 +471,18 @@ namespace TinyVideoPlayer
         /// </summary>
         private void MediaGrid_MouseLeave(object sender, MouseEventArgs e)
         {
-            ResizeButton.Visibility = Visibility.Hidden;
-            FindMedia.Visibility = Visibility.Hidden;
-        }
-
-        /// <summary>
-        /// Hides sound buttons.
-        /// </summary>
-        private void SoundGrid_MouseLeave(object sender, MouseEventArgs e)
-        {
-            VolumeSlider.Visibility = Visibility.Hidden;
-            ToggleMuteButton.Visibility = Visibility.Hidden;
+            if (UseAnimation)
+            {
+                AnimationTools.FadeOut(ResizeButton);
+                AnimationTools.FadeOut(FindMedia);
+                AnimationTools.FadeOut(MaximizeButton);
+            }
+            else
+            {
+                ResizeButton.Visibility = Visibility.Hidden;
+                FindMedia.Visibility = Visibility.Hidden;
+                MaximizeButton.Visibility = Visibility.Hidden;
+            }
         }
 
         /// <summary>
@@ -480,8 +492,65 @@ namespace TinyVideoPlayer
         {
             if (!VideoControl.SourceProvider.MediaPlayer.CouldPlay) return;
 
-            VolumeSlider.Visibility = Visibility.Visible;
-            ToggleMuteButton.Visibility = Visibility.Visible;
+            if (UseAnimation)
+            {
+                AnimationTools.FadeIn(VolumeSlider);
+                AnimationTools.FadeIn(ToggleMuteButton);
+            }
+            else
+            {
+                VolumeSlider.Visibility = Visibility.Visible;
+                ToggleMuteButton.Visibility = Visibility.Visible;
+            }
+        }
+
+        /// <summary>
+        /// Hides sound buttons.
+        /// </summary>
+        private void SoundGrid_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (UseAnimation)
+            {
+                AnimationTools.FadeOut(VolumeSlider);
+                AnimationTools.FadeOut(ToggleMuteButton);
+            }
+            else
+            {
+                VolumeSlider.Visibility = Visibility.Hidden;
+                ToggleMuteButton.Visibility = Visibility.Hidden;
+            }
+        }
+
+        /// <summary>
+        /// Shows time slider.
+        /// </summary>
+        private void TimeGrid_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (!VideoControl.SourceProvider.MediaPlayer.CouldPlay) return;
+
+            if (UseAnimation)
+            {
+                AnimationTools.FadeIn(TimeSlider);
+            }
+            else
+            {
+                TimeSlider.Visibility = Visibility.Visible;
+            }
+        }
+
+        /// <summary>
+        /// Hides time slider.
+        /// </summary>
+        private void TimeGrid_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (UseAnimation)
+            {
+                AnimationTools.FadeOut(TimeSlider);
+            }
+            else
+            {
+                TimeSlider.Visibility = Visibility.Hidden;
+            }
         }
 
         /// <summary>
@@ -508,7 +577,8 @@ namespace TinyVideoPlayer
                     var result = dialog.ShowDialog();
                     if (result != null && !result.Value) return;
 
-                    Play(new Uri(dialog.FileName));
+                    CurrentFile = new Uri(dialog.FileName);
+                    Play(CurrentFile);
                     break;
 
                 case "ToggleMuteButton":
@@ -524,6 +594,10 @@ namespace TinyVideoPlayer
                         ToggleMuteButton.Tag = Application.Current.Resources["VolumeImage"] as BitmapImage;
                     }
                     break;
+
+                case "MaximizeButton":
+                    WindowState = WindowState != WindowState.Maximized ? WindowState.Maximized : WindowState.Normal;
+                    break;
             }
         }
 
@@ -534,6 +608,14 @@ namespace TinyVideoPlayer
         {
             var value = (int)Math.Round(e.NewValue * 200, 0);
             VideoControl.SourceProvider.MediaPlayer.Audio.Volume = value;
+        }
+
+        /// <summary>
+        /// Update the position of video.
+        /// </summary>
+        private void TimeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            //VideoControl.SourceProvider.MediaPlayer.Position = (float)e.NewValue;
         }
 
         /// <summary>
@@ -554,6 +636,18 @@ namespace TinyVideoPlayer
             Cursor = Cursors.Hand;
         }
 
+        /// <summary>
+        /// Handles error on MediaPlayer.
+        /// </summary>
+        private void MediaPlayer_EncounteredError(object sender, VlcMediaPlayerEncounteredErrorEventArgs e)
+        {
+		    var result = MessageBox.Show($"{e}", "An error occured", MessageBoxButton.OK);
+            if (result != MessageBoxResult.OK) return;
+
+            VideoControl.SourceProvider.Dispose();
+            Application.Current.Shutdown();
+        }
+
         #endregion //Events
 
         #region Methods
@@ -568,6 +662,7 @@ namespace TinyVideoPlayer
                 DropText.Visibility = Visibility.Collapsed;
 
             VideoControl.SourceProvider.MediaPlayer.Play(fileName);
+            TimeSlider.Value = 0;
             VolumeSlider.Value = (double)VideoControl.SourceProvider.MediaPlayer.Audio.Volume / 200;
         }
 

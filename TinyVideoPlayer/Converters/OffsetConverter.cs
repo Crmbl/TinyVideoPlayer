@@ -20,7 +20,7 @@ namespace TinyVideoPlayer.Converters
                 case "inside":
                     return canvasWidth - canvasWidth / 20 - 10;
                 case "outside":
-                    return canvasWidth - canvasWidth / 20;
+                    return canvasWidth - canvasWidth / 5;
                 default:
                     return 0;
             }

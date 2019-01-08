@@ -14,7 +14,8 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Button Grid.Column="0" x:Name="ResizeButton" Style="{StaticResource ButtonImageBase}" Tag="{StaticResource ResizeImage}" />
-            <Button Grid.Column="1" x:Name="FindMedia" Style="{StaticResource ButtonImageBase}" Tag="{StaticResource FindMediaImage}" />
+            <Button Grid.Column="1" x:Name="MaximizeButton" Style="{StaticResource ButtonImageBase}" Tag="{StaticResource MaximizeImage}" />
+            <Button Grid.Column="2" x:Name="FindMedia" Style="{StaticResource ButtonImageBase}" Tag="{StaticResource FindMediaImage}" />
         </Grid>
         <Grid x:Name="SoundGrid" Style="{StaticResource SoundGrid}" Panel.ZIndex="110">
             <Grid.RowDefinitions>
@@ -30,6 +31,9 @@
             </TextBlock>
         </Canvas>
         <vlc:VlcControl x:Name="VideoControl" Style="{StaticResource VlcStyle}" />
-        <Slider x:Name="TimeSlider" Style="{StaticResource SliderStyleBottom}" Width="NaN" />
+        <Grid x:Name="TimeGrid" Style="{StaticResource TimeGrid}" Panel.ZIndex="110">
+            <Slider x:Name="TimeSlider" Style="{StaticResource SliderStyleBottom}"
+                    Width="{Binding ElementName=DropZone, Path=ActualWidth, Converter={StaticResource OffsetConverter}, ConverterParameter='outside'}"/>
+        </Grid>
     </Grid>
 </Window>
