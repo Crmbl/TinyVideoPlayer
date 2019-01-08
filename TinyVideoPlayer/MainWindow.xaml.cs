@@ -3,16 +3,22 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using Microsoft.Win32;
+using TinyVideoPlayer.Converters;
 using Vlc.DotNet.Core;
 
+//TODO Add maximize tab
 namespace TinyVideoPlayer
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window/*, INotifyPropertyChanged*/
+    public partial class MainWindow : Window
     {
         #region DLL imports 
 
@@ -74,24 +80,6 @@ namespace TinyVideoPlayer
 
         #endregion //Properties
 
-        //#region NotifyPropertyChanged
-
-        ///// <summary>
-        ///// The <see cref="INotifyPropertyChanged"/> event handler.
-        ///// </summary>
-        //public event PropertyChangedEventHandler PropertyChanged;
-
-        ///// <summary>
-        ///// Raise the modification event.
-        ///// </summary>
-        ///// <param name="propertyName"></param>
-        //internal void NotifyPropertyChanged(string propertyName = "")
-        //{
-        //    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        //}
-
-        //#endregion //NotifyPropertyChanged
-
         /// <summary>
         /// Default constructor.
         /// </summary>
@@ -105,6 +93,8 @@ namespace TinyVideoPlayer
             var vlcLibDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "libvlc", IntPtr.Size == 4 ? "win-x86" : "win-x64"));
             var options = new [] { /*https://wiki.videolan.org/Documentation:Command_line/*/ /*"--file-logging", "-vvv", "--extraintf=logger", "--logfile=Logs.log"*/ "" };
 
+            #region Events subscribing
+
             VideoControl.SourceProvider.CreatePlayer(vlcLibDirectory, options);
             VideoControl.RenderTransform = new TransformGroup { Children = new TransformCollection { new TranslateTransform(), new ScaleTransform() } };
             VideoControl.SourceProvider.MediaPlayer.EndReached += MediaPlayer_EndReached;
@@ -115,17 +105,67 @@ namespace TinyVideoPlayer
             DropZone.PreviewMouseMove += DropZone_PreviewMouseMove;
             DropZone.PreviewMouseLeftButtonUp += DropZone_PreviewMouseLeftButtonUp;
             DropZone.MouseDown += DropZone_MouseDown;
+            MediaGrid.MouseEnter += MediaGrid_MouseEnter;
+            MediaGrid.MouseLeave += MediaGrid_MouseLeave;
+            SoundGrid.MouseEnter += SoundGrid_MouseEnter;
+            SoundGrid.MouseLeave += SoundGrid_MouseLeave;
+            ResizeButton.Click += MediaButton_Click;
+            FindMedia.Click += MediaButton_Click;
+            ToggleMuteButton.Click += MediaButton_Click;
+            VolumeSlider.ValueChanged += VolumeSlider_ValueChanged;
             this.PreviewMouseRightButtonDown += MainWindow_PreviewMouseRightButtonDown;
             this.PreviewMouseMove += MainWindow_PreviewMouseMove;
+            this.MouseEnter += MainWindow_MouseEnter;
+            this.MouseLeave += MainWindow_MouseLeave;
 
-            #region Testing
+            #endregion // Events subscribing
 
-            CurrentFile = new Uri(@"C:\Users\SCHAEFAX\Documents\Perso\testVid.webm");
-            //CurrentFile = new Uri("http://download.blender.org/peach/bigbuckbunny_movies/big_buck_bunny_480p_h264.mov");
-            VideoControl.SourceProvider.MediaPlayer.Play(CurrentFile);
-            VideoControl.SourceProvider.MediaPlayer.Audio.IsMute = true;
+            #region Init bindings
 
-            #endregion //Testing
+            MediaGrid.SetBinding(Canvas.LeftProperty, new MultiBinding
+            {
+                Converter = new CenterConverter(),
+                ConverterParameter = "left",
+                Mode = BindingMode.TwoWay,
+                Bindings = {
+                    new Binding("ActualWidth") { Source = DropZone },
+                    new Binding("ActualHeight") { Source = DropZone },
+                    new Binding("ActualWidth") { Source = MediaGrid },
+                    new Binding("ActualHeight") { Source = MediaGrid }
+                }
+            });
+            DropText.SetBinding(Canvas.TopProperty, new MultiBinding
+            {
+                Converter = new CenterConverter(),
+                ConverterParameter = "top",
+                Mode = BindingMode.TwoWay,
+                Bindings = {
+                    new Binding("ActualWidth") { Source = DropZone },
+                    new Binding("ActualHeight") { Source = DropZone },
+                    new Binding("ActualWidth") { Source = DropText },
+                    new Binding("ActualHeight") { Source = DropText }
+                }
+            });
+            TimeSlider.SetBinding(Canvas.BottomProperty, new MultiBinding
+            {
+                Converter = new CenterConverter(),
+                ConverterParameter = "bottom",
+                Mode = BindingMode.TwoWay,
+                Bindings = {
+                    new Binding("ActualWidth") { Source = DropZone },
+                    new Binding("ActualHeight") { Source = DropZone },
+                    new Binding("ActualWidth") { Source = TimeSlider },
+                    new Binding("ActualHeight") { Source = TimeSlider }
+                }
+            });
+            ResizeButton.Visibility = Visibility.Hidden;
+            FindMedia.Visibility = Visibility.Hidden;
+            VolumeSlider.Visibility = Visibility.Hidden;
+            ToggleMuteButton.Visibility = Visibility.Hidden;
+            DropText.Visibility = Visibility.Visible;
+            ToggleMuteButton.Tag = Application.Current.Resources["VolumeImage"] as BitmapImage;
+
+            #endregion //Init bindings
         }
 
         /// <summary>
@@ -302,12 +342,20 @@ namespace TinyVideoPlayer
         /// </summary>
         private void DropZone_Drop(object sender, DragEventArgs e)
         {
-            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
-            var files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            if (files == null || files.Length > 1) return;
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                if (files == null || files.Length > 1) return;
+                CurrentFile = new Uri(files.First());
+            }
+            else if (e.Data.GetDataPresent(DataFormats.StringFormat))
+            {
+                var link = (string)e.Data.GetData(DataFormats.StringFormat);
+                if (string.IsNullOrWhiteSpace(link)) return;
+                CurrentFile = new Uri(link);
+            }
 
-            CurrentFile = new Uri(files.First());
-            VideoControl.SourceProvider.MediaPlayer.Play(CurrentFile);
+            Play(CurrentFile);
         }
 
         /// <summary>
@@ -369,22 +417,160 @@ namespace TinyVideoPlayer
         /// </summary>
         private void DropZone_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            if (VideoControl.SourceProvider.MediaPlayer.CouldPlay)
+            {
+                var scaleTransform = (ScaleTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is ScaleTransform);
+                var elementHeight = VideoControl.ActualHeight * scaleTransform.ScaleY;
+                var elementWidth = VideoControl.ActualWidth * scaleTransform.ScaleX;
+
+                if (elementWidth <= DropZone.ActualWidth && elementHeight <= DropZone.ActualHeight) return;
+
+                VideoControl.Cursor = Cursors.SizeAll;
+                DropZone.CaptureMouse();
+
+                var translateTransform = (TranslateTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is TranslateTransform);
+                MousePosition = e.GetPosition(DropZone);
+                OriginPosition = new Point(Math.Round(translateTransform.X, MidpointRounding.AwayFromZero), Math.Round(translateTransform.Y, MidpointRounding.AwayFromZero));
+
+                SystemParametersInfo(0x0071, 0, 3, 0);
+            }
+            else
+            {
+                var dialog = new OpenFileDialog { Filter = "Tous les fichiers (*.*)|*.*" };
+                var result = dialog.ShowDialog();
+                if (result != null && !result.Value) return;
+
+                Play(new Uri(dialog.FileName));
+            }
+        }
+
+        /// <summary>
+        /// Shows media buttons.
+        /// </summary>
+        private void MediaGrid_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (!VideoControl.SourceProvider.MediaPlayer.CouldPlay) return;
+
+            ResizeButton.Visibility = Visibility.Visible;
+            FindMedia.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Hides media buttons.
+        /// </summary>
+        private void MediaGrid_MouseLeave(object sender, MouseEventArgs e)
+        {
+            ResizeButton.Visibility = Visibility.Hidden;
+            FindMedia.Visibility = Visibility.Hidden;
+        }
+
+        /// <summary>
+        /// Hides sound buttons.
+        /// </summary>
+        private void SoundGrid_MouseLeave(object sender, MouseEventArgs e)
+        {
+            VolumeSlider.Visibility = Visibility.Hidden;
+            ToggleMuteButton.Visibility = Visibility.Hidden;
+        }
+
+        /// <summary>
+        /// Shows sound buttons.
+        /// </summary>
+        private void SoundGrid_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (!VideoControl.SourceProvider.MediaPlayer.CouldPlay) return;
+
+            VolumeSlider.Visibility = Visibility.Visible;
+            ToggleMuteButton.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Defines the buttons and their action.
+        /// </summary>
+        private void MediaButton_Click(object sender, RoutedEventArgs e)
+        {
             var scaleTransform = (ScaleTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is ScaleTransform);
-            var elementHeight = VideoControl.ActualHeight * scaleTransform.ScaleY;
-            var elementWidth = VideoControl.ActualWidth * scaleTransform.ScaleX;
-
-            if (elementWidth <= DropZone.ActualWidth && elementHeight <= DropZone.ActualHeight) return;
-
-            VideoControl.Cursor = Cursors.SizeAll;
-            DropZone.CaptureMouse();
-
             var translateTransform = (TranslateTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is TranslateTransform);
-            MousePosition = e.GetPosition(DropZone);
-            OriginPosition = new Point(Math.Round(translateTransform.X, MidpointRounding.AwayFromZero), Math.Round(translateTransform.Y, MidpointRounding.AwayFromZero));
+            translateTransform.X = 0;
+            translateTransform.Y = 0;
 
-            SystemParametersInfo(0x0071, 0, 3, 0);
+            switch ((sender as Button)?.Name)
+            {
+                case "ResizeButton":
+                    scaleTransform.ScaleY = 1;
+                    scaleTransform.ScaleX = 1;
+                    break;
+
+                case "FindMedia":
+                    VideoControl.SourceProvider.MediaPlayer.Pause();
+
+                    var dialog = new OpenFileDialog { Filter = "Tous les fichiers (*.*)|*.*" };
+                    var result = dialog.ShowDialog();
+                    if (result != null && !result.Value) return;
+
+                    Play(new Uri(dialog.FileName));
+                    break;
+
+                case "ToggleMuteButton":
+                    VideoControl.SourceProvider.MediaPlayer.Audio.ToggleMute();
+                    if (VideoControl.SourceProvider.MediaPlayer.Audio.IsMute)
+                    {
+                        VolumeSlider.Value = 0;
+                        ToggleMuteButton.Tag = Application.Current.Resources["MuteImage"] as BitmapImage;
+                    }
+                    else
+                    {
+                        VolumeSlider.Value = 0.5;
+                        ToggleMuteButton.Tag = Application.Current.Resources["VolumeImage"] as BitmapImage;
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Update the volume.
+        /// </summary>
+        private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            var value = (int)Math.Round(e.NewValue * 200, 0);
+            VideoControl.SourceProvider.MediaPlayer.Audio.Volume = value;
+        }
+
+        /// <summary>
+        /// Force cursor on leave.
+        /// </summary>
+        private void MainWindow_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (Cursor != Cursors.Arrow)
+                Cursor = Cursors.Arrow;
+        }
+
+        /// <summary>
+        /// Update cursor if no media could play.
+        /// </summary>
+        private void MainWindow_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (VideoControl.SourceProvider.MediaPlayer.CouldPlay) return;
+            Cursor = Cursors.Hand;
         }
 
         #endregion //Events
+
+        #region Methods
+
+        /// <summary>
+        /// Private Play method.
+        /// </summary>
+        /// <param name="fileName"></param>
+        private void Play(Uri fileName)
+        {
+            if (DropText.Visibility == Visibility.Visible)
+                DropText.Visibility = Visibility.Collapsed;
+
+            VideoControl.SourceProvider.MediaPlayer.Play(fileName);
+            VolumeSlider.Value = (double)VideoControl.SourceProvider.MediaPlayer.Audio.Volume / 200;
+        }
+
+        #endregion //Methods
     }
 }

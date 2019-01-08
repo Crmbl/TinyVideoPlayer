@@ -7,17 +7,29 @@
         Style="{StaticResource WindowStyle}"
         mc:Ignorable="d">
     <Grid x:Name="MainGrid">
-        <Grid x:Name="MediaButtons">
+        <Grid x:Name="MediaGrid" Style="{StaticResource MediaGrid}" Panel.ZIndex="110">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" x:Name="TakeWidthButton" Height="45" Width="45" Panel.ZIndex="110" Background="Yellow" />
-            <Button Grid.Column="1" x:Name="TakeHeightButton" Height="45" Width="45" Panel.ZIndex="110" Background="Red" />
-            <Button Grid.Column="2" x:Name="ResizeButton" Height="45" Width="45" Panel.ZIndex="110" Background="Blue" />
+            <Button Grid.Column="0" x:Name="ResizeButton" Style="{StaticResource ButtonImageBase}" Tag="{StaticResource ResizeImage}" />
+            <Button Grid.Column="1" x:Name="FindMedia" Style="{StaticResource ButtonImageBase}" Tag="{StaticResource FindMediaImage}" />
         </Grid>
-        <Canvas x:Name="DropZone" Style="{StaticResource CanvasStyle}" Visibility="Hidden"/>
-        <vlc:VlcControl x:Name="VideoControl" Style="{StaticResource VlcStyle}" Visibility="Hidden" />
+        <Grid x:Name="SoundGrid" Style="{StaticResource SoundGrid}" Panel.ZIndex="110">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Slider Grid.Row="0" x:Name="VolumeSlider" Style="{StaticResource SliderStyle}" />
+            <Button Grid.Row="1" x:Name="ToggleMuteButton" Style="{StaticResource ButtonImageSide}" />
+        </Grid>
+        <Canvas x:Name="DropZone" Style="{StaticResource CanvasStyle}" Panel.ZIndex="100">
+            <TextBlock x:Name="DropText" Style="{StaticResource TextStyle}" Width="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=Canvas}}">
+                DROP A VIDEO<LineBreak/>OR CLICK
+            </TextBlock>
+        </Canvas>
+        <vlc:VlcControl x:Name="VideoControl" Style="{StaticResource VlcStyle}" />
+        <Slider x:Name="TimeSlider" Style="{StaticResource SliderStyleBottom}" Width="NaN" />
     </Grid>
 </Window>

@@ -2,7 +2,7 @@
 using System.Globalization;
 using System.Windows.Data;
 
-namespace TinyVideoPlayer
+namespace TinyVideoPlayer.Converters
 {
     /// <summary>
     /// Allow the child to be centered inside the canvas.
@@ -18,6 +18,7 @@ namespace TinyVideoPlayer
             var canvasHeight = System.Convert.ToDouble(values[1]);
             var controlWidth = System.Convert.ToDouble(values[2]);
             var controlHeight = System.Convert.ToDouble(values[3]);
+
             switch ((string)parameter)
             {
                 case "top":
