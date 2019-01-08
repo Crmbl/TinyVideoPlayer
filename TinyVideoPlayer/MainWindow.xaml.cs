@@ -85,11 +85,6 @@ namespace TinyVideoPlayer
         /// </summary>
         private bool UseAnimation { get; }
 
-        /// <summary>
-        /// Defines if this is a youtube video.
-        /// </summary>
-        private bool IsYoutubeVideo { get; set; }
-
         #endregion //Properties
 
         /// <summary>
@@ -211,11 +206,6 @@ namespace TinyVideoPlayer
         /// </summary>
         delegate void VlcRepeatDelegate(Uri fileUri, string[] pars);
 
-        /// <summary>
-        /// Used for the repeat youtube feature.
-        /// </summary>
-        delegate void VlcYoutubeRepeatDelegate(string file);
-
         #region Events
 
         /// <summary>
@@ -246,19 +236,10 @@ namespace TinyVideoPlayer
         private void MediaPlayer_EndReached(object sender, VlcMediaPlayerEndReachedEventArgs e)
         {
             if (!IsRepeating) return;
-
-            if (IsYoutubeVideo)
-            {
-                VlcRepeatDelegate vlcDelegate = VideoControl.SourceProvider.MediaPlayer.Play;
-                this.Dispatcher.Invoke(() => { TimeSlider.Value = 0; });
-                vlcDelegate.BeginInvoke(CurrentFile, new string[] { }, null, null);
-            }
-            else
-            {
-                VlcYoutubeRepeatDelegate vlcDelegate = PlayYoutubeVideo;
-                this.Dispatcher.Invoke(() => { TimeSlider.Value = 0; });
-                vlcDelegate.BeginInvoke(CurrentFile.ToString(), null, null);
-            }
+         
+            VlcRepeatDelegate vlcDelegate = VideoControl.SourceProvider.MediaPlayer.Play;
+            this.Dispatcher.Invoke(() => { TimeSlider.Value = 0; });
+            vlcDelegate.BeginInvoke(CurrentFile, new string[] { }, null, null);
         }
 
         /// <summary>
@@ -399,7 +380,7 @@ namespace TinyVideoPlayer
             {
                 var link = (string)e.Data.GetData(DataFormats.StringFormat);
                 if (string.IsNullOrWhiteSpace(link)) return;
-                CurrentFile = new Uri(link);
+
                 PlayYoutubeVideo(link);
             }
         }
@@ -755,6 +736,7 @@ namespace TinyVideoPlayer
 
             var video = await client.GetVideoMediaStreamInfosAsync(youtubeVidId);
             var muxed = video.Muxed.WithHighestVideoQuality();
+            CurrentFile = new Uri(muxed.Url);
 
             if (DropText.Visibility == Visibility.Visible)
                 DropText.Visibility = Visibility.Collapsed;
