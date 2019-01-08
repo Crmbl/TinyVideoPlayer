@@ -12,6 +12,8 @@ using Microsoft.Win32;
 using TinyVideoPlayer.Converters;
 using TinyVideoPlayer.Utils;
 using Vlc.DotNet.Core;
+using YoutubeExplode;
+using YoutubeExplode.Models.MediaStreams;
 
 namespace TinyVideoPlayer
 {
@@ -82,6 +84,11 @@ namespace TinyVideoPlayer
         /// Defines if use the fade animation for the buttons.
         /// </summary>
         private bool UseAnimation { get; }
+
+        /// <summary>
+        /// Defines if this is a youtube video.
+        /// </summary>
+        private bool IsYoutubeVideo { get; set; }
 
         #endregion //Properties
 
@@ -202,6 +209,11 @@ namespace TinyVideoPlayer
         /// </summary>
         delegate void VlcRepeatDelegate(Uri fileUri, string[] pars);
 
+        /// <summary>
+        /// Used for the repeat youtube feature.
+        /// </summary>
+        delegate void VlcYoutubeRepeatDelegate(string file);
+
         #region Events
 
         /// <summary>
@@ -233,9 +245,18 @@ namespace TinyVideoPlayer
         {
             if (!IsRepeating) return;
 
-            VlcRepeatDelegate vlcDelegate = VideoControl.SourceProvider.MediaPlayer.Play;
-            this.Dispatcher.Invoke(() => { TimeSlider.Value = 0; });
-            vlcDelegate.BeginInvoke(CurrentFile, new string[] {}, null, null);
+            if (IsYoutubeVideo)
+            {
+                VlcRepeatDelegate vlcDelegate = VideoControl.SourceProvider.MediaPlayer.Play;
+                this.Dispatcher.Invoke(() => { TimeSlider.Value = 0; });
+                vlcDelegate.BeginInvoke(CurrentFile, new string[] { }, null, null);
+            }
+            else
+            {
+                VlcYoutubeRepeatDelegate vlcDelegate = PlayYoutubeVideo;
+                this.Dispatcher.Invoke(() => { TimeSlider.Value = 0; });
+                vlcDelegate.BeginInvoke(CurrentFile.ToString(), null, null);
+            }
         }
 
         /// <summary>
@@ -368,15 +389,15 @@ namespace TinyVideoPlayer
                 var files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 if (files == null || files.Length > 1) return;
                 CurrentFile = new Uri(files.First());
+                Play(CurrentFile);
             }
             else if (e.Data.GetDataPresent(DataFormats.StringFormat))
             {
                 var link = (string)e.Data.GetData(DataFormats.StringFormat);
                 if (string.IsNullOrWhiteSpace(link)) return;
                 CurrentFile = new Uri(link);
+                PlayYoutubeVideo(link);
             }
-
-            Play(CurrentFile);
         }
 
         /// <summary>
@@ -714,6 +735,28 @@ namespace TinyVideoPlayer
             VideoControl.SourceProvider.MediaPlayer.Play(fileName);
             TimeSlider.Value = 0;
             VolumeSlider.Value = (double)VideoControl.SourceProvider.MediaPlayer.Audio.Volume / 200;
+        }
+
+        /// <summary>
+        /// Private Play for youtube video.
+        /// </summary>
+        private async void PlayYoutubeVideo(string fileName)
+        {
+            var youtubeVidId = YoutubeClient.ParseVideoId(fileName);
+            var client = new YoutubeClient();
+
+            var video = await client.GetVideoMediaStreamInfosAsync(youtubeVidId);
+            var muxed = video.Muxed.WithHighestVideoQuality();
+
+            if (DropText.Visibility == Visibility.Visible)
+                DropText.Visibility = Visibility.Collapsed;
+
+            VideoControl.SourceProvider.MediaPlayer.Play(muxed.Url);
+            Dispatcher.Invoke(() =>
+            {
+                TimeSlider.Value = 0;
+                VolumeSlider.Value = (double) VideoControl.SourceProvider.MediaPlayer.Audio.Volume / 200;
+            });
         }
 
         #endregion //Methods
