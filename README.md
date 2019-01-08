@@ -1,5 +1,5 @@
 # TinyVideoPlayer
-A tiny video player with a clean design.
+A tiny video player with a clean (no?) design.
 
 ![screenshot tinyplayer](https://raw.github.com/Crmbl/TinyVideoPlayer/master/TinyVideoPlayer/Capture.PNG)
 
