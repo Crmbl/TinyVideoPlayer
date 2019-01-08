@@ -13,6 +13,7 @@
         <TaskbarItemInfo>
             <TaskbarItemInfo.ThumbButtonInfos>
                 <ThumbButtonInfo x:Name="ThumbButton" ImageSource="{StaticResource PauseImage}" />
+                <ThumbButtonInfo x:Name="FavoriteButton" ImageSource="{StaticResource BookmarkedImage}" />
             </TaskbarItemInfo.ThumbButtonInfos>
         </TaskbarItemInfo>
     </Window.TaskbarItemInfo>
@@ -34,7 +35,7 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Slider Grid.Row="0" x:Name="VolumeSlider" Style="{StaticResource SliderStyle}" />
-            <Button Grid.Row="1" x:Name="ToggleMuteButton" Style="{StaticResource ButtonImageSide}" />
+            <Button Grid.Row="1" x:Name="ToggleMuteButton" Style="{StaticResource ButtonImageSide}" Tag="{StaticResource VolumeImage}" />
         </Grid>
         <Canvas x:Name="DropZone" Style="{StaticResource CanvasStyle}" Panel.ZIndex="100">
             <TextBlock x:Name="DropText" Style="{StaticResource TextStyle}" Width="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=Canvas}}">

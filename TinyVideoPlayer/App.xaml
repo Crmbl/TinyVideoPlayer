@@ -168,5 +168,7 @@
         <BitmapImage x:Key="MaximizeImage" UriSource="/Resources/Images/maximize.png" />
         <BitmapImage x:Key="PauseImage" UriSource="/Resources/Images/pause.ico" />
         <BitmapImage x:Key="PlayImage" UriSource="/Resources/Images/play.ico" />
+        <BitmapImage x:Key="BookmarkedImage" UriSource="/Resources/Images/bookmarked.ico" />
+        <BitmapImage x:Key="BookmarkImage" UriSource="/Resources/Images/bookmark.ico" />
     </Application.Resources>
 </Application>

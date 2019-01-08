@@ -149,6 +149,10 @@
     <Resource Include="Capture.PNG" />
     <Resource Include="Capture1.PNG" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Images\bookmark.ico" />
+    <Resource Include="Resources\Images\bookmarked.ico" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\VideoLAN.LibVLC.Windows.3.0.5\build\VideoLAN.LibVLC.Windows.targets" Condition="Exists('..\packages\VideoLAN.LibVLC.Windows.3.0.5\build\VideoLAN.LibVLC.Windows.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

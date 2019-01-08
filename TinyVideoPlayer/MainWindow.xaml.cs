@@ -102,6 +102,7 @@ namespace TinyVideoPlayer
             IsRepeating = true;
             UseAnimation = true;
             OriginMouseSpeed = (uint)System.Windows.Forms.SystemInformation.MouseSpeed;
+            Topmost = true;
 
             var vlcLibDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "libvlc", IntPtr.Size == 4 ? "win-x86" : "win-x64"));
             var options = new []
@@ -141,6 +142,7 @@ namespace TinyVideoPlayer
             TimeSlider.PreviewMouseDown += TimeSlider_PreviewMouseDown;
             TimeSlider.PreviewMouseUp += TimeSlider_PreviewMouseUp;
             ThumbButton.Click += ThumbButton_Click;
+            FavoriteButton.Click += FavoriteButton_Click;
             this.PreviewMouseRightButtonDown += MainWindow_PreviewMouseRightButtonDown;
             this.PreviewMouseMove += MainWindow_PreviewMouseMove;
             this.MouseEnter += MainWindow_MouseEnter;
@@ -199,7 +201,7 @@ namespace TinyVideoPlayer
             DropText.Visibility = Visibility.Visible;
             TimeSlider.Visibility = Visibility.Hidden;
             ThumbButton.Visibility = Visibility.Hidden;
-            ToggleMuteButton.Tag = Application.Current.Resources["VolumeImage"] as BitmapImage;
+            FavoriteButton.Visibility = Visibility.Hidden;
 
             #endregion //Init Visibility states
         }
@@ -280,6 +282,8 @@ namespace TinyVideoPlayer
             {
                 if (ThumbButton.Visibility != Visibility.Visible)
                     ThumbButton.Visibility = Visibility.Visible;
+                if (FavoriteButton.Visibility != Visibility.Visible)
+                    FavoriteButton.Visibility = Visibility.Visible;
             });
         }
 
@@ -645,6 +649,10 @@ namespace TinyVideoPlayer
         {
             var value = (int)Math.Round(e.NewValue * 200, 0);
             VideoControl.SourceProvider.MediaPlayer.Audio.Volume = value;
+
+            if (!VideoControl.SourceProvider.MediaPlayer.Audio.IsMute || value == 0) return;
+            VideoControl.SourceProvider.MediaPlayer.Audio.ToggleMute();
+            ToggleMuteButton.Tag = Application.Current.Resources["VolumeImage"] as BitmapImage;
         }
 
         /// <summary>
@@ -757,6 +765,19 @@ namespace TinyVideoPlayer
                 TimeSlider.Value = 0;
                 VolumeSlider.Value = (double) VideoControl.SourceProvider.MediaPlayer.Audio.Volume / 200;
             });
+        }
+
+        /// <summary>
+        /// Toggle TopMost on window.
+        /// </summary>
+        private void FavoriteButton_Click(object sender, EventArgs e)
+        {
+            if (Topmost)
+                FavoriteButton.ImageSource = Application.Current.Resources["BookmarkImage"] as BitmapImage;
+            else
+                FavoriteButton.ImageSource = Application.Current.Resources["BookmarkedImage"] as BitmapImage;
+
+            Topmost = !Topmost;
         }
 
         #endregion //Methods
