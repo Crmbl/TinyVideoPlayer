@@ -102,15 +102,15 @@ namespace TinyVideoPlayer
             var vlcLibDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "libvlc", IntPtr.Size == 4 ? "win-x86" : "win-x64"));
             var options = new []
             {
-                /*https://wiki.videolan.org/Documentation:Command_line/*/
-                /*"--file-logging", "-vvv", "--extraintf=logger", "--logfile=Logs.log"*/
-                ""
+                //"--file-logging", "-vvv", "--extraintf=logger", "--logfile=Logs.log",
+                "--no-ignore-config"
             };
-
-            #region Events subscribing
 
             VideoControl.SourceProvider.CreatePlayer(vlcLibDirectory, options);
             VideoControl.RenderTransform = new TransformGroup { Children = new TransformCollection { new TranslateTransform(), new ScaleTransform() } };
+
+            #region Events subscribing
+
             VideoControl.SourceProvider.MediaPlayer.EndReached += MediaPlayer_EndReached;
             VideoControl.SourceProvider.MediaPlayer.MediaChanged += MediaPlayer_MediaChanged;
             VideoControl.SourceProvider.MediaPlayer.PositionChanged += MediaPlayer_PositionChanged;
@@ -238,7 +238,7 @@ namespace TinyVideoPlayer
             if (!IsRepeating) return;
          
             VlcRepeatDelegate vlcDelegate = VideoControl.SourceProvider.MediaPlayer.Play;
-            this.Dispatcher.Invoke(() => { TimeSlider.Value = 0; });
+            Dispatcher.Invoke(() => { TimeSlider.Value = 0; });
             vlcDelegate.BeginInvoke(CurrentFile, new string[] { }, null, null);
         }
 
@@ -593,7 +593,8 @@ namespace TinyVideoPlayer
                     break;
 
                 case "FindMedia":
-                    VideoControl.SourceProvider.MediaPlayer.Pause();
+                    if (VideoControl.SourceProvider.MediaPlayer.IsPlaying())
+                        VideoControl.SourceProvider.MediaPlayer.Pause();
 
                     var dialog = new OpenFileDialog { Filter = "Tous les fichiers (*.*)|*.*" };
                     var result = dialog.ShowDialog();
@@ -604,21 +605,33 @@ namespace TinyVideoPlayer
                     break;
 
                 case "ToggleMuteButton":
-                    VideoControl.SourceProvider.MediaPlayer.Audio.ToggleMute();
-                    if (VideoControl.SourceProvider.MediaPlayer.Audio.IsMute)
+                    Dispatcher.Invoke(() =>
                     {
-                        VolumeSlider.Value = 0;
-                        ToggleMuteButton.Tag = Application.Current.Resources["MuteImage"] as BitmapImage;
-                    }
-                    else
-                    {
-                        VolumeSlider.Value = 0.5;
-                        ToggleMuteButton.Tag = Application.Current.Resources["VolumeImage"] as BitmapImage;
-                    }
+                        VideoControl.SourceProvider.MediaPlayer.Audio.ToggleMute();
+                        if (VideoControl.SourceProvider.MediaPlayer.Audio.IsMute)
+                        {
+                            VolumeSlider.Value = 0;
+                            ToggleMuteButton.Tag = Application.Current.Resources["MuteImage"] as BitmapImage;
+                        }
+                        else
+                        {
+                            VolumeSlider.Value = 0.5;
+                            ToggleMuteButton.Tag = Application.Current.Resources["VolumeImage"] as BitmapImage;
+                        }
+                    });
                     break;
 
                 case "MaximizeButton":
-                    WindowState = WindowState != WindowState.Maximized ? WindowState.Maximized : WindowState.Normal;
+                    if (WindowState != WindowState.Maximized)
+                    {
+                        WindowState = WindowState.Maximized;
+                        MaximizeButton.Tag = Application.Current.Resources["MinimizeImage"] as BitmapImage;
+                    }
+                    else
+                    {
+                        WindowState = WindowState.Normal;
+                        MaximizeButton.Tag = Application.Current.Resources["MaximizeImage"] as BitmapImage;
+                    }
                     break;
             }
         }
@@ -629,11 +642,14 @@ namespace TinyVideoPlayer
         private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             var value = (int)Math.Round(e.NewValue * 200, 0);
-            VideoControl.SourceProvider.MediaPlayer.Audio.Volume = value;
+            Dispatcher.Invoke(() => { VideoControl.SourceProvider.MediaPlayer.Audio.Volume = value; });
 
             if (!VideoControl.SourceProvider.MediaPlayer.Audio.IsMute || value == 0) return;
-            VideoControl.SourceProvider.MediaPlayer.Audio.ToggleMute();
-            ToggleMuteButton.Tag = Application.Current.Resources["VolumeImage"] as BitmapImage;
+            Dispatcher.Invoke(() =>
+            {
+                VideoControl.SourceProvider.MediaPlayer.Audio.ToggleMute();
+                ToggleMuteButton.Tag = Application.Current.Resources["VolumeImage"] as BitmapImage;
+            });
         }
 
         /// <summary>
@@ -642,7 +658,7 @@ namespace TinyVideoPlayer
         private void TimeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (TimeSlider.IsMouseCaptured)
-                VideoControl.SourceProvider.MediaPlayer.Position = (float)e.NewValue;
+                Dispatcher.Invoke(() => { VideoControl.SourceProvider.MediaPlayer.Position = (float) e.NewValue; });
         }
 
         /// <summary>
@@ -668,9 +684,8 @@ namespace TinyVideoPlayer
         /// </summary>
         private void MediaPlayer_EncounteredError(object sender, VlcMediaPlayerEncounteredErrorEventArgs e)
         {
-		    var result = MessageBox.Show($"{e}", "An error occured", MessageBoxButton.OK);
+		    var result = MessageBox.Show($"{(sender as VlcMediaPlayer).State.ToString()}", "An error occured", MessageBoxButton.OK);
             if (result != MessageBoxResult.OK) return;
-
             VideoControl.SourceProvider.Dispose();
             Application.Current.Shutdown();
         }

@@ -18,7 +18,7 @@
         </TaskbarItemInfo>
     </Window.TaskbarItemInfo>
     <Border Style="{StaticResource BorderStyle}">
-    <Grid x:Name="MainGrid">
+    <Grid x:Name="MainGrid" Style="{StaticResource MainGridStyle}">
         <Grid x:Name="MediaGrid" Style="{StaticResource MediaGrid}" Panel.ZIndex="110">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />

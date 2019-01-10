@@ -34,11 +34,13 @@
             <Setter Property="TextWrapping" Value="WrapWithOverflow" />
         </Style>
 
+        <Style x:Key="MainGridStyle" TargetType="Grid">
+            <Setter Property="ClipToBounds" Value="True" />
+        </Style>
+
         <Style x:Key="BorderStyle" TargetType="Border">
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="BorderBrush" Value="#a8a8a8" />
-            <!--<Setter Property="Panel.ZIndex" Value="150" />
-            <Setter Property="ClipToBounds" Value="True" />--> <!--NOT WORKING-->
         </Style>
 
         <Style x:Key="ButtonImageBase" TargetType="Button">
@@ -167,6 +169,7 @@
         <BitmapImage x:Key="MuteImage" UriSource="/Resources/Images/mute.png" />
         <BitmapImage x:Key="VolumeImage" UriSource="/Resources/Images/volume.png" />
         <BitmapImage x:Key="MaximizeImage" UriSource="/Resources/Images/maximize.png" />
+        <BitmapImage x:Key="MinimizeImage" UriSource="/Resources/Images/minimize.png" />
         <BitmapImage x:Key="PauseImage" UriSource="/Resources/Images/pause.ico" />
         <BitmapImage x:Key="PlayImage" UriSource="/Resources/Images/play.ico" />
         <BitmapImage x:Key="BookmarkedImage" UriSource="/Resources/Images/bookmarked.ico" />
