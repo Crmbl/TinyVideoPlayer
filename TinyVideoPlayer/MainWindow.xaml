@@ -4,6 +4,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vlc="clr-namespace:Vlc.DotNet.Wpf;assembly=Vlc.DotNet.Wpf"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:showMeTheXaml="clr-namespace:ShowMeTheXAML;assembly=ShowMeTheXAML"
         Style="{StaticResource WindowStyle}"
         mc:Ignorable="d">
     <WindowChrome.WindowChrome>
@@ -19,29 +21,80 @@
     </Window.TaskbarItemInfo>
     <Border Style="{StaticResource BorderStyle}">
     <Grid x:Name="MainGrid" Style="{StaticResource MainGridStyle}">
-        <Grid x:Name="MediaGrid" Style="{StaticResource MediaGrid}" Panel.ZIndex="110">
+        <Grid x:Name="MediaGrid" Style="{StaticResource MediaGridStyle}" Panel.ZIndex="110">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" x:Name="ResizeButton" Style="{StaticResource ButtonImageBase}" Tag="{StaticResource ResizeImage}" />
-            <Button Grid.Column="1" x:Name="MaximizeButton" Style="{StaticResource ButtonImageBase}" Tag="{StaticResource MaximizeImage}" />
-            <Button Grid.Column="2" x:Name="FindMedia" Style="{StaticResource ButtonImageBase}" Tag="{StaticResource FindMediaImage}" />
+            <Button Grid.Column="0" x:Name="ResizeButton" Height="45" Width="45" Margin="10,0"
+                    Style="{DynamicResource MaterialDesignFloatingActionButton}" 
+                    materialDesign:ShadowAssist.ShadowDepth="Depth2">
+                <materialDesign:PackIcon Kind="ArrowCollapseAll" />
+            </Button>
+            <Button Grid.Column="1" x:Name="MaximizeButton" Height="45" Width="45" Margin="10,0"
+                    Style="{DynamicResource MaterialDesignFloatingActionButton}" 
+                    materialDesign:ShadowAssist.ShadowDepth="Depth2">
+                <materialDesign:PackIcon Kind="ArrowExpand" x:Name="MaximizeIcon" />
+            </Button>
+            <Button Grid.Column="2" x:Name="FindMediaButton" Height="45" Width="45" Margin="10,0"
+                    Style="{DynamicResource MaterialDesignFloatingActionButton}" 
+                    materialDesign:ShadowAssist.ShadowDepth="Depth2">
+                <materialDesign:PackIcon Kind="FolderSearchOutline" />
+            </Button>
+            <Button Grid.Column="3" x:Name="BrowserButton" Height="45" Width="45" Margin="10,0"
+                    Style="{DynamicResource MaterialDesignFloatingActionButton}" 
+                    materialDesign:ShadowAssist.ShadowDepth="Depth2">
+                <materialDesign:PackIcon Kind="YoutubePlay" />
+            </Button>
         </Grid>
-        <Grid x:Name="SoundGrid" Style="{StaticResource SoundGrid}" Panel.ZIndex="110">
+        <Grid x:Name="SoundGrid" Style="{StaticResource SoundGridStyle}" Panel.ZIndex="110">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Slider Grid.Row="0" x:Name="VolumeSlider" Style="{StaticResource SliderStyle}" />
-            <Button Grid.Row="1" x:Name="ToggleMuteButton" Style="{StaticResource ButtonImageSide}" Tag="{StaticResource VolumeImage}" />
+            <Button Grid.Row="1" x:Name="ToggleMuteButton" Height="45" Width="45" Margin="0,10,0,0"
+                    Style="{DynamicResource MaterialDesignFloatingActionButton}" 
+                    materialDesign:ShadowAssist.ShadowDepth="Depth2">
+                <materialDesign:PackIcon Kind="VolumeMedium" x:Name="MuteIcon" />
+            </Button>
+        </Grid>
+        <Grid x:Name="ToolGrid" Style="{StaticResource ToolGridStyle}" Panel.ZIndex="110">
+            <Button x:Name="ToggleRepeatButton" Height="45" Width="45"
+                Style="{DynamicResource MaterialDesignFloatingActionDarkButton}" 
+                materialDesign:ShadowAssist.ShadowDepth="Depth2">
+                    <materialDesign:PackIcon Kind="Repeat" x:Name="RepeatIcon" />
+            </Button>
         </Grid>
         <Canvas x:Name="DropZone" Style="{StaticResource CanvasStyle}" Panel.ZIndex="100">
-            <TextBlock x:Name="DropText" Style="{StaticResource TextStyle}" Width="{Binding Path=ActualWidth, RelativeSource={RelativeSource AncestorType=Canvas}}">
-                DROP A VIDEO<LineBreak/>OR CLICK
-            </TextBlock>
-        </Canvas>
+            <Grid x:Name="DropMenu" Style="{StaticResource MenuGridStyle}" Panel.ZIndex="110">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="2" x:Name="DropText" Style="{StaticResource TextStyle}">
+                    DROP A VIDEO
+                </TextBlock>
+                <Button Grid.Column="0" Grid.Row="1" x:Name="FindMediaButtonBis" HorizontalAlignment="Right"
+                        Click="MediaButton_ButtonClick" Height="45" Width="130" Margin="0,0,10,0"
+                    Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                    materialDesign:ShadowAssist.ShadowDepth="Depth2">
+                    OPEN FOLDER
+                </Button>
+                <Button Grid.Column="1" Grid.Row="1" x:Name="BrowserButtonBis" HorizontalAlignment="Left"
+                        Click="MediaButton_ButtonClick" Height="45" Width="130" Margin="10,0,0,0"
+                        Style="{DynamicResource MaterialDesignRaisedDarkButton}" 
+                        materialDesign:ShadowAssist.ShadowDepth="Depth2">
+                    GO YOUTUBE
+                </Button>
+            </Grid>
+            </Canvas>
         <vlc:VlcControl x:Name="VideoControl" Style="{StaticResource VlcStyle}" />
         <Grid x:Name="TimeGrid" Style="{StaticResource TimeGrid}" Panel.ZIndex="110">
             <Slider x:Name="TimeSlider" Style="{StaticResource SliderStyleBottom}"

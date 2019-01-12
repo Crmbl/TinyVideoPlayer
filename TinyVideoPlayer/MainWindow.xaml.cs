@@ -8,9 +8,11 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 using TinyVideoPlayer.Converters;
 using TinyVideoPlayer.Utils;
+using TinyVideoPlayer.Views;
 using Vlc.DotNet.Core;
 using YoutubeExplode;
 using YoutubeExplode.Models.MediaStreams;
@@ -126,12 +128,16 @@ namespace TinyVideoPlayer
             MediaGrid.MouseLeave += MediaGrid_MouseLeave;
             SoundGrid.MouseEnter += SoundGrid_MouseEnter;
             SoundGrid.MouseLeave += SoundGrid_MouseLeave;
+            ToolGrid.MouseEnter += ToolGrid_MouseEnter;
+            ToolGrid.MouseLeave += ToolGrid_MouseLeave;
             TimeGrid.MouseEnter += TimeGrid_MouseEnter;
             TimeGrid.MouseLeave += TimeGrid_MouseLeave;
-            ResizeButton.Click += MediaButton_Click;
-            MaximizeButton.Click += MediaButton_Click;
-            FindMedia.Click += MediaButton_Click;
-            ToggleMuteButton.Click += MediaButton_Click;
+            ResizeButton.Click += MediaButton_ButtonClick;
+            MaximizeButton.Click += MediaButton_ButtonClick;
+            FindMediaButton.Click += MediaButton_ButtonClick;
+            BrowserButton.Click += MediaButton_ButtonClick;
+            ToggleMuteButton.Click += MediaButton_ButtonClick;
+            ToggleRepeatButton.Click += MediaButton_ButtonClick;
             VolumeSlider.ValueChanged += VolumeSlider_ValueChanged;
             TimeSlider.ValueChanged += TimeSlider_ValueChanged;
             TimeSlider.PreviewMouseDown += TimeSlider_PreviewMouseDown;
@@ -140,8 +146,6 @@ namespace TinyVideoPlayer
             FavoriteButton.Click += FavoriteButton_Click;
             this.PreviewMouseRightButtonDown += MainWindow_PreviewMouseRightButtonDown;
             this.PreviewMouseMove += MainWindow_PreviewMouseMove;
-            this.MouseEnter += MainWindow_MouseEnter;
-            this.MouseLeave += MainWindow_MouseLeave;
 
             #endregion // Events subscribing
 
@@ -157,6 +161,30 @@ namespace TinyVideoPlayer
                     new Binding("ActualHeight") { Source = DropZone },
                     new Binding("ActualWidth") { Source = MediaGrid },
                     new Binding("ActualHeight") { Source = MediaGrid }
+                }
+            });
+            DropMenu.SetBinding(Canvas.LeftProperty, new MultiBinding
+            {
+                Converter = new CenterConverter(),
+                ConverterParameter = "left",
+                Mode = BindingMode.TwoWay,
+                Bindings = {
+                    new Binding("ActualWidth") { Source = DropZone },
+                    new Binding("ActualHeight") { Source = DropZone },
+                    new Binding("ActualWidth") { Source = DropMenu },
+                    new Binding("ActualHeight") { Source = DropMenu }
+                }
+            });
+            DropMenu.SetBinding(Canvas.TopProperty, new MultiBinding
+            {
+                Converter = new CenterConverter(),
+                ConverterParameter = "top",
+                Mode = BindingMode.TwoWay,
+                Bindings = {
+                    new Binding("ActualWidth") { Source = DropZone },
+                    new Binding("ActualHeight") { Source = DropZone },
+                    new Binding("ActualWidth") { Source = DropMenu },
+                    new Binding("ActualHeight") { Source = DropMenu }
                 }
             });
             DropText.SetBinding(Canvas.TopProperty, new MultiBinding
@@ -189,14 +217,16 @@ namespace TinyVideoPlayer
             #region Init Visibility states
 
             ResizeButton.Visibility = Visibility.Hidden;
-            FindMedia.Visibility = Visibility.Hidden;
+            FindMediaButton.Visibility = Visibility.Hidden;
+            BrowserButton.Visibility = Visibility.Hidden;
             MaximizeButton.Visibility = Visibility.Hidden;
             VolumeSlider.Visibility = Visibility.Hidden;
             ToggleMuteButton.Visibility = Visibility.Hidden;
-            DropText.Visibility = Visibility.Visible;
+            DropMenu.Visibility = Visibility.Visible;
             TimeSlider.Visibility = Visibility.Hidden;
             ThumbButton.Visibility = Visibility.Hidden;
             FavoriteButton.Visibility = Visibility.Hidden;
+            ToggleRepeatButton.Visibility = Visibility.Hidden;
 
             #endregion //Init Visibility states
         }
@@ -235,11 +265,20 @@ namespace TinyVideoPlayer
         /// </summary>
         private void MediaPlayer_EndReached(object sender, VlcMediaPlayerEndReachedEventArgs e)
         {
-            if (!IsRepeating) return;
-         
-            VlcRepeatDelegate vlcDelegate = VideoControl.SourceProvider.MediaPlayer.Play;
-            Dispatcher.Invoke(() => { TimeSlider.Value = 0; });
-            vlcDelegate.BeginInvoke(CurrentFile, new string[] { }, null, null);
+            if (IsRepeating)
+            {
+                VlcRepeatDelegate vlcDelegate = VideoControl.SourceProvider.MediaPlayer.Play;
+                Dispatcher.Invoke(() => { TimeSlider.Value = 0; });
+                vlcDelegate.BeginInvoke(CurrentFile, new string[] { }, null, null);
+            }
+            else
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    if (DropMenu.Visibility == Visibility.Collapsed)
+                        DropMenu.Visibility = Visibility.Visible;
+                });
+            }
         }
 
         /// <summary>
@@ -439,32 +478,22 @@ namespace TinyVideoPlayer
         /// </summary>
         private void DropZone_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (VideoControl.SourceProvider.MediaPlayer.CouldPlay)
-            {
-                var scaleTransform = (ScaleTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is ScaleTransform);
-                var elementHeight = VideoControl.ActualHeight * scaleTransform.ScaleY;
-                var elementWidth = VideoControl.ActualWidth * scaleTransform.ScaleX;
+            if (!VideoControl.SourceProvider.MediaPlayer.CouldPlay) return;
 
-                if (elementWidth <= DropZone.ActualWidth && elementHeight <= DropZone.ActualHeight) return;
+            var scaleTransform = (ScaleTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is ScaleTransform);
+            var elementHeight = VideoControl.ActualHeight * scaleTransform.ScaleY;
+            var elementWidth = VideoControl.ActualWidth * scaleTransform.ScaleX;
 
-                VideoControl.Cursor = Cursors.SizeAll;
-                DropZone.CaptureMouse();
+            if (elementWidth <= DropZone.ActualWidth && elementHeight <= DropZone.ActualHeight) return;
 
-                var translateTransform = (TranslateTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is TranslateTransform);
-                MousePosition = e.GetPosition(DropZone);
-                OriginPosition = new Point(Math.Round(translateTransform.X, MidpointRounding.AwayFromZero), Math.Round(translateTransform.Y, MidpointRounding.AwayFromZero));
+            VideoControl.Cursor = Cursors.SizeAll;
+            DropZone.CaptureMouse();
 
-                SystemParametersInfo(0x0071, 0, 3, 0);
-            }
-            else
-            {
-                var dialog = new OpenFileDialog { Filter = "Tous les fichiers (*.*)|*.*" };
-                var result = dialog.ShowDialog();
-                if (result != null && !result.Value) return;
+            var translateTransform = (TranslateTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is TranslateTransform);
+            MousePosition = e.GetPosition(DropZone);
+            OriginPosition = new Point(Math.Round(translateTransform.X, MidpointRounding.AwayFromZero), Math.Round(translateTransform.Y, MidpointRounding.AwayFromZero));
 
-                CurrentFile = new Uri(dialog.FileName);
-                Play(CurrentFile);
-            }
+            SystemParametersInfo(0x0071, 0, 3, 0);
         }
 
         /// <summary>
@@ -477,13 +506,15 @@ namespace TinyVideoPlayer
             if (UseAnimation)
             {
                 AnimationTools.FadeIn(ResizeButton);
-                AnimationTools.FadeIn(FindMedia);
+                AnimationTools.FadeIn(FindMediaButton);
+                AnimationTools.FadeIn(BrowserButton);
                 AnimationTools.FadeIn(MaximizeButton);
             }
             else
             {
                 ResizeButton.Visibility = Visibility.Visible;
-                FindMedia.Visibility = Visibility.Visible;
+                FindMediaButton.Visibility = Visibility.Visible;
+                BrowserButton.Visibility = Visibility.Visible;
                 MaximizeButton.Visibility = Visibility.Visible;
             }
         }
@@ -496,14 +527,48 @@ namespace TinyVideoPlayer
             if (UseAnimation)
             {
                 AnimationTools.FadeOut(ResizeButton);
-                AnimationTools.FadeOut(FindMedia);
+                AnimationTools.FadeOut(FindMediaButton);
+                AnimationTools.FadeOut(BrowserButton);
                 AnimationTools.FadeOut(MaximizeButton);
             }
             else
             {
                 ResizeButton.Visibility = Visibility.Hidden;
-                FindMedia.Visibility = Visibility.Hidden;
+                FindMediaButton.Visibility = Visibility.Hidden;
+                BrowserButton.Visibility = Visibility.Hidden;
                 MaximizeButton.Visibility = Visibility.Hidden;
+            }
+        }
+
+        /// <summary>
+        /// Shows tool buttons.
+        /// </summary>
+        private void ToolGrid_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (!VideoControl.SourceProvider.MediaPlayer.CouldPlay) return;
+
+            if (UseAnimation)
+            {
+                AnimationTools.FadeIn(ToggleRepeatButton);
+            }
+            else
+            {
+                ToggleRepeatButton.Visibility = Visibility.Visible;
+            }
+        }
+
+        /// <summary>
+        /// Hides tool buttons.
+        /// </summary>
+        private void ToolGrid_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (UseAnimation)
+            {
+                AnimationTools.FadeOut(ToggleRepeatButton);
+            }
+            else
+            {
+                ToggleRepeatButton.Visibility = Visibility.Hidden;
             }
         }
 
@@ -578,7 +643,7 @@ namespace TinyVideoPlayer
         /// <summary>
         /// Defines the buttons and their action.
         /// </summary>
-        private void MediaButton_Click(object sender, RoutedEventArgs e)
+        private void MediaButton_ButtonClick(object sender, RoutedEventArgs e)
         {
             var scaleTransform = (ScaleTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is ScaleTransform);
             var translateTransform = (TranslateTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is TranslateTransform);
@@ -592,7 +657,8 @@ namespace TinyVideoPlayer
                     scaleTransform.ScaleX = 1;
                     break;
 
-                case "FindMedia":
+                case "FindMediaButton":
+                case "FindMediaButtonBis":
                     if (VideoControl.SourceProvider.MediaPlayer.IsPlaying())
                         VideoControl.SourceProvider.MediaPlayer.Pause();
 
@@ -604,6 +670,15 @@ namespace TinyVideoPlayer
                     Play(CurrentFile);
                     break;
 
+                case "BrowserButton":
+                case "BrowserButtonBis":
+                    if (VideoControl.SourceProvider.MediaPlayer.IsPlaying())
+                        VideoControl.SourceProvider.MediaPlayer.Pause();
+
+                    var browser = new YTBrowser(this);
+                    browser.Show();
+                    break;
+
                 case "ToggleMuteButton":
                     Dispatcher.Invoke(() =>
                     {
@@ -611,12 +686,12 @@ namespace TinyVideoPlayer
                         if (VideoControl.SourceProvider.MediaPlayer.Audio.IsMute)
                         {
                             VolumeSlider.Value = 0;
-                            ToggleMuteButton.Tag = Application.Current.Resources["MuteImage"] as BitmapImage;
+                            MuteIcon.Kind = PackIconKind.VolumeMute;
                         }
                         else
                         {
                             VolumeSlider.Value = 0.5;
-                            ToggleMuteButton.Tag = Application.Current.Resources["VolumeImage"] as BitmapImage;
+                            MuteIcon.Kind = PackIconKind.VolumeMedium;
                         }
                     });
                     break;
@@ -625,12 +700,24 @@ namespace TinyVideoPlayer
                     if (WindowState != WindowState.Maximized)
                     {
                         WindowState = WindowState.Maximized;
-                        MaximizeButton.Tag = Application.Current.Resources["MinimizeImage"] as BitmapImage;
+                        MaximizeIcon.Kind = PackIconKind.ArrowCollapse;
                     }
                     else
                     {
                         WindowState = WindowState.Normal;
-                        MaximizeButton.Tag = Application.Current.Resources["MaximizeImage"] as BitmapImage;
+                        MaximizeIcon.Kind = PackIconKind.ArrowExpand;
+                    }
+                    break;
+
+                case "ToggleRepeatButton":
+                    IsRepeating = !IsRepeating;
+                    if (IsRepeating)
+                    {
+                        RepeatIcon.Kind = PackIconKind.Repeat;
+                    }
+                    else
+                    {
+                        RepeatIcon.Kind = PackIconKind.RepeatOff;
                     }
                     break;
             }
@@ -648,7 +735,7 @@ namespace TinyVideoPlayer
             Dispatcher.Invoke(() =>
             {
                 VideoControl.SourceProvider.MediaPlayer.Audio.ToggleMute();
-                ToggleMuteButton.Tag = Application.Current.Resources["VolumeImage"] as BitmapImage;
+                MuteIcon.Kind = PackIconKind.VolumeMedium;
             });
         }
 
@@ -659,24 +746,6 @@ namespace TinyVideoPlayer
         {
             if (TimeSlider.IsMouseCaptured)
                 Dispatcher.Invoke(() => { VideoControl.SourceProvider.MediaPlayer.Position = (float) e.NewValue; });
-        }
-
-        /// <summary>
-        /// Force cursor on leave.
-        /// </summary>
-        private void MainWindow_MouseLeave(object sender, MouseEventArgs e)
-        {
-            if (Cursor != Cursors.Arrow)
-                Cursor = Cursors.Arrow;
-        }
-
-        /// <summary>
-        /// Update cursor if no media could play.
-        /// </summary>
-        private void MainWindow_MouseEnter(object sender, MouseEventArgs e)
-        {
-            if (VideoControl.SourceProvider.MediaPlayer.CouldPlay) return;
-            Cursor = Cursors.Hand;
         }
 
         /// <summary>
@@ -723,47 +792,6 @@ namespace TinyVideoPlayer
             TimeSlider.ReleaseMouseCapture();
         }
 
-        #endregion //Events
-
-        #region Methods
-
-        /// <summary>
-        /// Private Play method.
-        /// </summary>
-        /// <param name="fileName"></param>
-        private void Play(Uri fileName)
-        {
-            if (DropText.Visibility == Visibility.Visible)
-                DropText.Visibility = Visibility.Collapsed;
-
-            VideoControl.SourceProvider.MediaPlayer.Play(fileName);
-            TimeSlider.Value = 0;
-            VolumeSlider.Value = (double)VideoControl.SourceProvider.MediaPlayer.Audio.Volume / 200;
-        }
-
-        /// <summary>
-        /// Private Play for youtube video.
-        /// </summary>
-        private async void PlayYoutubeVideo(string fileName)
-        {
-            var youtubeVidId = YoutubeClient.ParseVideoId(fileName);
-            var client = new YoutubeClient();
-
-            var video = await client.GetVideoMediaStreamInfosAsync(youtubeVidId);
-            var muxed = video.Muxed.WithHighestVideoQuality();
-            CurrentFile = new Uri(muxed.Url);
-
-            if (DropText.Visibility == Visibility.Visible)
-                DropText.Visibility = Visibility.Collapsed;
-
-            VideoControl.SourceProvider.MediaPlayer.Play(muxed.Url);
-            Dispatcher.Invoke(() =>
-            {
-                TimeSlider.Value = 0;
-                VolumeSlider.Value = (double) VideoControl.SourceProvider.MediaPlayer.Audio.Volume / 200;
-            });
-        }
-
         /// <summary>
         /// Toggle TopMost on window.
         /// </summary>
@@ -775,6 +803,47 @@ namespace TinyVideoPlayer
                 FavoriteButton.ImageSource = Application.Current.Resources["BookmarkedImage"] as BitmapImage;
 
             Topmost = !Topmost;
+        }
+
+        #endregion //Events
+
+        #region Methods
+
+        /// <summary>
+        /// Private Play method.
+        /// </summary>
+        /// <param name="fileName"></param>
+        private void Play(Uri fileName)
+        {
+            if (DropMenu.Visibility == Visibility.Visible)
+                DropMenu.Visibility = Visibility.Collapsed;
+
+            VideoControl.SourceProvider.MediaPlayer.Play(fileName);
+            TimeSlider.Value = 0;
+            VolumeSlider.Value = (double)VideoControl.SourceProvider.MediaPlayer.Audio.Volume / 200;
+        }
+
+        /// <summary>
+        /// Private Play for youtube video.
+        /// </summary>
+        public async void PlayYoutubeVideo(string fileName)
+        {
+            var youtubeVidId = YoutubeClient.ParseVideoId(fileName);
+            var client = new YoutubeClient();
+
+            var video = await client.GetVideoMediaStreamInfosAsync(youtubeVidId);
+            var muxed = video.Muxed.WithHighestVideoQuality();
+            CurrentFile = new Uri(muxed.Url);
+
+            if (DropMenu.Visibility == Visibility.Visible)
+                DropMenu.Visibility = Visibility.Collapsed;
+
+            VideoControl.SourceProvider.MediaPlayer.Play(muxed.Url);
+            Dispatcher.Invoke(() =>
+            {
+                TimeSlider.Value = 0;
+                VolumeSlider.Value = (double) VideoControl.SourceProvider.MediaPlayer.Audio.Volume / 200;
+            });
         }
 
         #endregion //Methods
