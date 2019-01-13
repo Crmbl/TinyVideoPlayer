@@ -6,7 +6,8 @@ A tiny video player with a simple design.
 * ThumbButtons on taskbar to toggle play/pause or topmost on/off
 * Double click to toggle play/pause
 * Zoom feature 
-* Resizable ...
+* Resizable
+* Search and play Youtube videos ...
 
 Use Vlc.DotNet
 
