@@ -16,6 +16,7 @@
             <Setter Property="Width" Value="600" />
             <Setter Property="ResizeMode" Value="CanResize" />
             <Setter Property="Background" Value="Black" />
+            <Setter Property="AllowsTransparency" Value="True" />
         </Style>
 
         <Style x:Key="BrowserStyle" TargetType="Window">
@@ -58,8 +59,8 @@
         </Style>
 
         <Style x:Key="BorderStyle" TargetType="Border">
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="BorderBrush" Value="#ee5253" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="BorderBrush" Value="#795548" />
         </Style>
 
         <Style x:Key="MediaGridStyle" TargetType="Grid">

@@ -48,6 +48,11 @@ namespace TinyVideoPlayer
         /// </summary>
         private const double ZoomRatio = 0.1;
 
+        /// <summary>
+        /// Defines the opacity to set.
+        /// </summary>
+        private const double OpacityLevel = 0.3;
+
         #endregion //Constants
 
         #region Properties
@@ -144,8 +149,11 @@ namespace TinyVideoPlayer
             TimeSlider.PreviewMouseUp += TimeSlider_PreviewMouseUp;
             ThumbButton.Click += ThumbButton_Click;
             FavoriteButton.Click += FavoriteButton_Click;
+            this.PreviewMouseLeftButtonDown += MainWindow_PreviewMouseLeftButtonDown;
             this.PreviewMouseRightButtonDown += MainWindow_PreviewMouseRightButtonDown;
             this.PreviewMouseMove += MainWindow_PreviewMouseMove;
+            this.MouseEnter += MainWindow_MouseEnter;
+            this.MouseLeave += MainWindow_MouseLeave;
 
             #endregion // Events subscribing
 
@@ -237,6 +245,34 @@ namespace TinyVideoPlayer
         delegate void VlcRepeatDelegate(Uri fileUri, string[] pars);
 
         #region Events
+
+        /// <summary>
+        /// If window clicked, set opacity to 1.
+        /// </summary>
+        private void MainWindow_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            Opacity = 1;
+            Keyboard.Focus(this);
+        }
+
+        /// <summary>
+        /// When leaving mouse set opacity to 1.
+        /// </summary>
+        private void MainWindow_MouseLeave(object sender, MouseEventArgs e)
+        {
+            Opacity = 1;
+        }
+
+        /// <summary>
+        /// If mouse over but not focused, opacity to half
+        /// </summary>
+        private void MainWindow_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (Topmost && !HasEffectiveKeyboardFocus)
+                Opacity = OpacityLevel;
+            else
+                Opacity = 1;
+        }
 
         /// <summary>
         /// Handles window dragging.
@@ -356,6 +392,8 @@ namespace TinyVideoPlayer
         /// </summary>
         private void DropZone_MouseWheel(object sender, MouseWheelEventArgs args)
         {
+            if (!this.HasEffectiveKeyboardFocus) return;
+
             var scaleTransform = (ScaleTransform)((TransformGroup)VideoControl.RenderTransform).Children.First(tr => tr is ScaleTransform);
             var zoom = args.Delta > 0 ? ZoomRatio : -ZoomRatio;
             var relativePointCache = VideoControl.TranslatePoint(new Point(0, 0), DropZone);

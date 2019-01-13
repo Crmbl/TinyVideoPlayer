@@ -4,7 +4,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        xmlns:showMeTheXaml="clr-namespace:ShowMeTheXAML;assembly=ShowMeTheXAML"
         mc:Ignorable="d"
         DataContext="{Binding RelativeSource={RelativeSource Self}}"
         Style="{StaticResource BrowserStyle}">
@@ -72,7 +71,7 @@
                                     <materialDesign:PackIcon Kind="Play" />
                                 </Button>
                                 <StackPanel Grid.Row="1" Margin="8 24 8 0" >
-                                    <TextBlock x:Name="Title" FontWeight="Bold" Text="{Binding Snippet.Title}" Foreground="#fdcb6e" Margin="0,0,0,4" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="Title" FontWeight="Bold" Text="{Binding Snippet.Title}" Foreground="#F44336" Margin="0,0,0,4" TextWrapping="Wrap" />
                                     <TextBlock x:Name="Description" TextWrapping="Wrap" VerticalAlignment="Center" Text="{Binding Snippet.Description}"/>
                                 </StackPanel>
                             </Grid>
