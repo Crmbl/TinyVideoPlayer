@@ -19,11 +19,15 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBox x:Name="SearchBox"
-                    Style="{StaticResource MaterialDesignFloatingHintTextBox}" 
+                <ComboBox x:Name="SearchBox"
                     materialDesign:HintAssist.Hint="Check for youtube content!"
                     HorizontalAlignment="Stretch"
-                    Margin="0,0,10,5"/>
+                    Margin="10,0,20,5"
+                    IsEditable="True"
+                    Style="{StaticResource MaterialDesignFloatingHintComboBox}"
+                    ItemsSource="{Binding OldSearches}"
+                    materialDesign:ComboBoxAssist.ShowSelectedItem="True">
+                </ComboBox>
                 <Grid
                     Grid.Column="1"
                     HorizontalAlignment="Right"

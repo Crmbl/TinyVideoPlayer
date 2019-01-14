@@ -2,13 +2,18 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using AngleSharp.Text;
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
+using Newtonsoft.Json;
+using TinyVideoPlayer.Utils;
 
 namespace TinyVideoPlayer.Views
 {
@@ -46,6 +51,8 @@ namespace TinyVideoPlayer.Views
         private List<SearchResult> _playlists;
 
         private string _previousSearch;
+
+        private string[] _oldSearches;
 
         private string _apiKey = File.ReadAllText(string.Concat(Environment.CurrentDirectory, "\\apiKey"));
 
@@ -105,6 +112,16 @@ namespace TinyVideoPlayer.Views
 
         public MainWindow Main { get; set; }
 
+        public string[] OldSearches
+        {
+            get => _oldSearches;
+            set
+            {
+                _oldSearches = value;
+                NotifyPropertyChanged("OldSearches");
+            }
+        }
+
         #endregion //Properties
 
         public YTBrowser(MainWindow main)
@@ -114,15 +131,29 @@ namespace TinyVideoPlayer.Views
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
             Main = main;
             IsSearching = false;
+            SearchBox.SelectedValue = null;
             SearchBox.KeyDown += SearchBox_KeyDown;
             SearchButton.Click += SearchButton_Click;
-            SearchBox.GotMouseCapture += SearchBox_GotMouseCapture;
             SearchBox.Loaded += SearchBox_Loaded;
+            SearchBox.PreviewTextInput += SearchBox_PreviewTextInput;
+
+            OldSearches = new[] {""};
+            if (File.Exists(string.Concat(Environment.CurrentDirectory, "\\searches")))
+                OldSearches = File.ReadAllText(string.Concat(Environment.CurrentDirectory, "\\searches"))
+                    .Split(';').Where(x => !string.IsNullOrWhiteSpace(x)).Reverse().ToArray();
+            else
+                File.Create(string.Concat(Environment.CurrentDirectory, "\\searches"));
         }
 
-        private void SearchBox_GotMouseCapture(object sender, MouseEventArgs e)
+        private void SearchBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            SearchBox.SelectAll();
+            using (WebClient wc = new WebClient())
+            {
+                var json = wc.DownloadString($"https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q={e.Text}&callback=suggestCallback");
+                Console.WriteLine(json);
+                //OldSearches = json.Split()
+                //var test = JsonConvert.DeserializeObject<YoutubeSuggestion>(json);
+            }
         }
 
         private void SearchBox_Loaded(object sender, RoutedEventArgs e)
@@ -162,6 +193,7 @@ namespace TinyVideoPlayer.Views
 
             var searchListResponse = await searchListRequest.ExecuteAsync();
             PreviousSearch = SearchBox.Text;
+            WriteWebHistory(PreviousSearch);
 
             Videos = new List<SearchResult>();
             Channels = new List<SearchResult>();
@@ -193,6 +225,16 @@ namespace TinyVideoPlayer.Views
             var button = sender as Button;
             Main.PlayYoutubeVideo($"https://www.youtube.com/watch?v={((ResourceId)button?.Tag)?.VideoId}");
             Close();
+        }
+
+        private void WriteWebHistory(string newSearch)
+        {
+            if (OldSearches.Contains(newSearch)) return;
+            using (var fileStream = File.AppendText(string.Concat(Environment.CurrentDirectory, "\\searches")))
+                fileStream.Write(newSearch + ";");
+
+            OldSearches = File.ReadAllText(string.Concat(Environment.CurrentDirectory, "\\searches"))
+                .Split(';').Where(x => !string.IsNullOrWhiteSpace(x)).Reverse().ToArray();
         }
     }
 }
