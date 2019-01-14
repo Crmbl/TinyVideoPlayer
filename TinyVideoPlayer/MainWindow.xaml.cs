@@ -268,7 +268,7 @@ namespace TinyVideoPlayer
         /// </summary>
         private void MainWindow_MouseEnter(object sender, MouseEventArgs e)
         {
-            if (Topmost && !HasEffectiveKeyboardFocus)
+            if (Topmost && !HasEffectiveKeyboardFocus && WindowState != WindowState.Maximized)
                 Opacity = OpacityLevel;
             else
                 Opacity = 1;
@@ -859,6 +859,7 @@ namespace TinyVideoPlayer
             VideoControl.SourceProvider.MediaPlayer.Play(fileName);
             TimeSlider.Value = 0;
             VolumeSlider.Value = (double)VideoControl.SourceProvider.MediaPlayer.Audio.Volume / 200;
+            Keyboard.Focus(this);
         }
 
         /// <summary>
@@ -881,6 +882,7 @@ namespace TinyVideoPlayer
             {
                 TimeSlider.Value = 0;
                 VolumeSlider.Value = (double) VideoControl.SourceProvider.MediaPlayer.Audio.Volume / 200;
+                Keyboard.Focus(this);
             });
         }
 

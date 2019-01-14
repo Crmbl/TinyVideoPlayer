@@ -68,8 +68,6 @@ namespace TinyVideoPlayer.Views
 
         public string CurrentSearch { get; set; }
 
-        public bool IsNavigating { get; set; }
-
         public bool IsSearching
         {
             get => _isSearching;
@@ -165,7 +163,6 @@ namespace TinyVideoPlayer.Views
 
             SearchButton.Click += SearchButton_Click;
             SearchBox.KeyDown += SearchBox_KeyDown;
-            //SearchBox.PreviewKeyDown += SearchBox_PreviewKeyDown;
             SearchBox.Loaded += SearchBox_Loaded;
 
             if (File.Exists(string.Concat(Environment.CurrentDirectory, "\\searches")))
@@ -174,21 +171,20 @@ namespace TinyVideoPlayer.Views
             else
                 File.Create(string.Concat(Environment.CurrentDirectory, "\\searches"));
 
-            MixedValues = Searches;
+            MixedValues = Searches.ToList();
         }
 
         private async void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            SearchBox.SelectedItem = null;
             SearchBox.IsDropDownOpen = true;
             var textBox = SearchBox.Template.FindName("PART_EditableTextBox", SearchBox) as TextBox;
             textBox.SelectionLength = 0;
             textBox.CaretIndex = textBox.Text.Length;
-            CurrentSearch = textBox?.Text;
-
-            if (IsNavigating) return;
+            CurrentSearch = textBox.Text;
 
             if (string.IsNullOrWhiteSpace(CurrentSearch))
-                MixedValues = Searches;
+                MixedValues = Searches.ToList();
             else
             {
                 using (var client = new HttpClient())
@@ -212,7 +208,7 @@ namespace TinyVideoPlayer.Views
                         }
                         else
                         {
-                            MixedValues = Suggestions;
+                            MixedValues = Suggestions.ToList();
                         }
                     }
                     catch (Exception ex)
@@ -238,17 +234,9 @@ namespace TinyVideoPlayer.Views
 
         private async void SearchBox_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key != Key.Enter || IsSearching || string.IsNullOrWhiteSpace(SearchBox.Text) || PreviousSearch == SearchBox.Text) return;
+            if (e.Key != Key.Enter || IsSearching || string.IsNullOrWhiteSpace(CurrentSearch) || PreviousSearch == CurrentSearch) return;
             await Search();
         }
-
-        //private void SearchBox_PreviewKeyDown(object sender, KeyEventArgs e)
-        //{
-        //    if (e.Key == Key.Down || e.Key == Key.Up)
-        //        IsNavigating = true;
-        //    else
-        //        IsNavigating = false;
-        //}
 
         public async Task Search()
         {
@@ -309,7 +297,7 @@ namespace TinyVideoPlayer.Views
 
             Searches = File.ReadAllText(string.Concat(Environment.CurrentDirectory, "\\searches"))
                 .Split(';').Where(x => !string.IsNullOrWhiteSpace(x)).Reverse().ToList();
-            MixedValues = Searches;
+            MixedValues = Searches.ToList();
         }
     }
 }

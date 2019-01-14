@@ -19,15 +19,12 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                    <!--materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                        StaysOpenOnEdit="True"-->
                 <ComboBox x:Name="SearchBox"
                           TextBoxBase.TextChanged="SearchBox_TextChanged"
                           IsTextSearchEnabled="False"
                           StaysOpenOnEdit="False"
                           materialDesign:ComboBoxAssist.ShowSelectedItem="False"
-                          KeyboardNavigation.DirectionalNavigation="Cycle"
-
+                          KeyboardNavigation.DirectionalNavigation="None"
                     ItemsSource="{Binding MixedValues}"
                     materialDesign:HintAssist.Hint="Check for youtube content!"
                     HorizontalAlignment="Stretch"
