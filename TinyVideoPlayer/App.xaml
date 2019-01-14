@@ -9,36 +9,6 @@
         <converters:OffsetConverter x:Key="OffsetConverter" />
         <converters:BooleanToVisibilityConverter x:Key="VisibilityConverter" />
 
-        <!--*******************************TESTING*******************************-->
-        <!--<materialDesign:ComboBoxPopup x:Name="PART_Popup" x:Key="PART_Popup"
-                                      AllowsTransparency="true"
-                                      Focusable="False"
-                                      HorizontalOffset="-11.5"
-                                      IsOpen="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                      PlacementTarget="{Binding ElementName=templateRoot}"
-                                      SnapsToDevicePixels="True"
-                                      UseLayoutRounding="True"
-                                      Placement="Custom"
-                                      PopupAnimation="Fade"
-                                      VerticalOffset="0"
-                                      DefaultVerticalOffset="5"
-                                      DownVerticalOffset="-15.5"
-                                      UpVerticalOffset="15"
-                                      ClassicMode="{Binding Path=(materialDesign:ComboBoxAssist.ClassicMode), RelativeSource={RelativeSource TemplatedParent}}"
-                                      UpContentTemplate="{StaticResource PopupContentUpTemplate}"
-                                      DownContentTemplate="{StaticResource PopupContentDownTemplate}"
-                                      ClassicContentTemplate="{StaticResource PopupContentClassicTemplate}">
-            <ContentControl>
-                --><!--MaxHeight="{TemplateBinding MaxDropDownHeight}"--><!--
-                <ScrollViewer 
-                              Background="{Binding Background, ElementName=PART_Popup}">
-                    --><!--<ItemsPresenter x:Name="ItemsPresenter" KeyboardNavigation.DirectionalNavigation="Contained" />--><!--
-                    ANUS
-                </ScrollViewer>
-            </ContentControl>
-        </materialDesign:ComboBoxPopup>-->
-        <!--*******************************TESTING*******************************-->
-
         <Style x:Key="WindowStyle" TargetType="Window">
             <Setter Property="WindowStyle" Value="None" />
             <Setter Property="Title" Value="TinyVideoPlayer" />

@@ -3,17 +3,17 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using AngleSharp.Text;
+using AngleSharp.Common;
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
 using Newtonsoft.Json;
-using TinyVideoPlayer.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace TinyVideoPlayer.Views
 {
@@ -52,13 +52,23 @@ namespace TinyVideoPlayer.Views
 
         private string _previousSearch;
 
-        private string[] _oldSearches;
+        private List<string> _searches;
+
+        private List<string> _suggestions;
+
+        private List<string> _mixedValues;
 
         private string _apiKey = File.ReadAllText(string.Concat(Environment.CurrentDirectory, "\\apiKey"));
 
         #endregion //Instance variables
 
         #region Properties
+
+        public MainWindow Main { get; set; }
+
+        public string CurrentSearch { get; set; }
+
+        public bool IsNavigating { get; set; }
 
         public bool IsSearching
         {
@@ -110,15 +120,33 @@ namespace TinyVideoPlayer.Views
             }
         }
 
-        public MainWindow Main { get; set; }
-
-        public string[] OldSearches
+        public List<string> Searches
         {
-            get => _oldSearches;
+            get => _searches;
             set
             {
-                _oldSearches = value;
-                NotifyPropertyChanged("OldSearches");
+                _searches = value;
+                NotifyPropertyChanged("Searches");
+            }
+        }
+
+        public List<string> Suggestions
+        {
+            get => _suggestions;
+            set
+            {
+                _suggestions = value;
+                NotifyPropertyChanged("Suggestions");
+            }
+        }
+
+        public List<string> MixedValues
+        {
+            get => _mixedValues;
+            set
+            {
+                _mixedValues = value;
+                NotifyPropertyChanged("MixedValues");
             }
         }
 
@@ -132,27 +160,66 @@ namespace TinyVideoPlayer.Views
             Main = main;
             IsSearching = false;
             SearchBox.SelectedValue = null;
-            SearchBox.KeyDown += SearchBox_KeyDown;
-            SearchButton.Click += SearchButton_Click;
-            SearchBox.Loaded += SearchBox_Loaded;
-            SearchBox.PreviewTextInput += SearchBox_PreviewTextInput;
+            Suggestions = new List<string>();
+            Searches = new List<string>();
 
-            OldSearches = new[] {""};
+            SearchButton.Click += SearchButton_Click;
+            SearchBox.KeyDown += SearchBox_KeyDown;
+            //SearchBox.PreviewKeyDown += SearchBox_PreviewKeyDown;
+            SearchBox.Loaded += SearchBox_Loaded;
+
             if (File.Exists(string.Concat(Environment.CurrentDirectory, "\\searches")))
-                OldSearches = File.ReadAllText(string.Concat(Environment.CurrentDirectory, "\\searches"))
-                    .Split(';').Where(x => !string.IsNullOrWhiteSpace(x)).Reverse().ToArray();
+                Searches = File.ReadAllText(string.Concat(Environment.CurrentDirectory, "\\searches"))
+                    .Split(';').Where(x => !string.IsNullOrWhiteSpace(x)).Reverse().ToList();
             else
                 File.Create(string.Concat(Environment.CurrentDirectory, "\\searches"));
+
+            MixedValues = Searches;
         }
 
-        private void SearchBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        private async void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            using (WebClient wc = new WebClient())
+            SearchBox.IsDropDownOpen = true;
+            var textBox = SearchBox.Template.FindName("PART_EditableTextBox", SearchBox) as TextBox;
+            textBox.SelectionLength = 0;
+            textBox.CaretIndex = textBox.Text.Length;
+            CurrentSearch = textBox?.Text;
+
+            if (IsNavigating) return;
+
+            if (string.IsNullOrWhiteSpace(CurrentSearch))
+                MixedValues = Searches;
+            else
             {
-                var json = wc.DownloadString($"https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q={e.Text}&callback=suggestCallback");
-                Console.WriteLine(json);
-                //OldSearches = json.Split()
-                //var test = JsonConvert.DeserializeObject<YoutubeSuggestion>(json);
+                using (var client = new HttpClient())
+                {
+                    try
+                    {
+                        var response = await client.GetAsync($"https://suggestqueries.google.com/complete/search?&client=youtube&ds=yt&q={CurrentSearch}");
+                        var jsonp = await response.Content.ReadAsStringAsync();
+                        var json = jsonp.Replace("window.google.ac.h(", "").Replace(")", "");
+
+                        if (!(JsonConvert.DeserializeObject(json) is JArray deserialized)) return;
+                        Suggestions.Clear();
+                        foreach (var suggestion in deserialized[1])
+                            Suggestions.Add(suggestion.Values().GetItemByIndex(0).ToString());
+
+                        if (Searches.Any())
+                        {
+                            var tmpList = Searches.Where(x => x.StartsWith(CurrentSearch.ToLower())).Take(3).ToList();
+                            tmpList.AddRange(Suggestions.Where(x => !tmpList.Contains(x.ToLower())).Take(10 - tmpList.Count));
+                            MixedValues = tmpList;
+                        }
+                        else
+                        {
+                            MixedValues = Suggestions;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($@"Message :{ex.Message}");
+                    }
+                }
             }
         }
 
@@ -160,21 +227,28 @@ namespace TinyVideoPlayer.Views
         {
             SearchBox.Focusable = true;
             Keyboard.Focus(SearchBox);
+            SearchBox.IsDropDownOpen = true;
         }
 
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
         {
-            if (IsSearching || string.IsNullOrWhiteSpace(SearchBox.Text) || PreviousSearch == SearchBox.Text) return;
-
+            if (IsSearching || string.IsNullOrWhiteSpace(CurrentSearch) || PreviousSearch == CurrentSearch) return;
             await Search();
         }
 
         private async void SearchBox_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Enter || IsSearching || string.IsNullOrWhiteSpace(SearchBox.Text) || PreviousSearch == SearchBox.Text) return;
-
             await Search();
         }
+
+        //private void SearchBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        //{
+        //    if (e.Key == Key.Down || e.Key == Key.Up)
+        //        IsNavigating = true;
+        //    else
+        //        IsNavigating = false;
+        //}
 
         public async Task Search()
         {
@@ -187,13 +261,13 @@ namespace TinyVideoPlayer.Views
             });
 
             var searchListRequest = youtubeService.Search.List("snippet");
-            searchListRequest.Q = SearchBox.Text;
+            searchListRequest.Q = CurrentSearch;
             searchListRequest.MaxResults = 50;
             searchListRequest.SafeSearch = SearchResource.ListRequest.SafeSearchEnum.None;
 
             var searchListResponse = await searchListRequest.ExecuteAsync();
-            PreviousSearch = SearchBox.Text;
-            WriteWebHistory(PreviousSearch);
+            PreviousSearch = CurrentSearch;
+            WriteWebHistory(PreviousSearch.ToLower());
 
             Videos = new List<SearchResult>();
             Channels = new List<SearchResult>();
@@ -229,12 +303,13 @@ namespace TinyVideoPlayer.Views
 
         private void WriteWebHistory(string newSearch)
         {
-            if (OldSearches.Contains(newSearch)) return;
+            if (Searches.Contains(newSearch)) return;
             using (var fileStream = File.AppendText(string.Concat(Environment.CurrentDirectory, "\\searches")))
                 fileStream.Write(newSearch + ";");
 
-            OldSearches = File.ReadAllText(string.Concat(Environment.CurrentDirectory, "\\searches"))
-                .Split(';').Where(x => !string.IsNullOrWhiteSpace(x)).Reverse().ToArray();
+            Searches = File.ReadAllText(string.Concat(Environment.CurrentDirectory, "\\searches"))
+                .Split(';').Where(x => !string.IsNullOrWhiteSpace(x)).Reverse().ToList();
+            MixedValues = Searches;
         }
     }
 }

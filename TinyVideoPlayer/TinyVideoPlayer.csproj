@@ -110,7 +110,6 @@
     </ApplicationDefinition>
     <Compile Include="Converters\BooleanToVisibilityConverter.cs" />
     <Compile Include="Utils\AnimationTools.cs" />
-    <Compile Include="Utils\YoutubeSuggestion.cs" />
     <Compile Include="Views\YTBrowser.xaml.cs">
       <DependentUpon>YTBrowser.xaml</DependentUpon>
     </Compile>
