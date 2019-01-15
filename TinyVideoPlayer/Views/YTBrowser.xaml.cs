@@ -284,8 +284,8 @@ namespace TinyVideoPlayer.Views
 
         private void Play_OnClick(object sender, RoutedEventArgs e)
         {
-            var button = sender as Button;
-            Main.PlayYoutubeVideo($"https://www.youtube.com/watch?v={((ResourceId)button?.Tag)?.VideoId}");
+            var fElement = sender as FrameworkElement;
+            Main.PlayYoutubeVideo($"https://www.youtube.com/watch?v={((ResourceId)fElement?.Tag)?.VideoId}");
             Close();
         }
 

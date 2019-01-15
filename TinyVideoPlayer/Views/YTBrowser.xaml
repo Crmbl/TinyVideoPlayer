@@ -73,7 +73,7 @@
                                     <RowDefinition Height="Auto" />
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
-                                <Image Source="{Binding Snippet.Thumbnails.High.Url}" Width="375" Stretch="UniformToFill" />
+                                <Image Source="{Binding Snippet.Thumbnails.High.Url}" Width="375" Stretch="UniformToFill" Cursor="Hand" MouseLeftButtonDown="Play_OnClick" Tag="{Binding Id}" />
                                 <Button Grid.Row="0" Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}" Click="Play_OnClick" Tag="{Binding Id}"
                                         HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0 0 16 -20">
                                     <materialDesign:PackIcon Kind="Play" />
