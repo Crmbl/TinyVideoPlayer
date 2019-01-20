@@ -58,7 +58,7 @@ namespace TinyVideoPlayer.Views
 
         private List<string> _mixedValues;
 
-        private string _apiKey = File.ReadAllText(string.Concat(Environment.CurrentDirectory, "\\apiKey"));
+        private string _apiKey;
 
         #endregion //Instance variables
 
@@ -165,11 +165,13 @@ namespace TinyVideoPlayer.Views
             SearchBox.KeyDown += SearchBox_KeyDown;
             SearchBox.Loaded += SearchBox_Loaded;
 
-            if (File.Exists(string.Concat(Environment.CurrentDirectory, "\\searches")))
-                Searches = File.ReadAllText(string.Concat(Environment.CurrentDirectory, "\\searches"))
+            var baseDir = System.Reflection.Assembly.GetEntryAssembly().Location.Replace("TinyVideoPlayer.exe", "");
+            _apiKey = File.ReadAllText(string.Concat(baseDir, "\\apiKey"));
+            if (File.Exists(string.Concat(baseDir, "\\searches")))
+                Searches = File.ReadAllText(string.Concat(baseDir, "\\searches"))
                     .Split(';').Where(x => !string.IsNullOrWhiteSpace(x)).Reverse().ToList();
             else
-                File.Create(string.Concat(Environment.CurrentDirectory, "\\searches"));
+                File.Create(string.Concat(baseDir, "\\searches"));
 
             MixedValues = Searches.ToList();
         }
@@ -292,10 +294,11 @@ namespace TinyVideoPlayer.Views
         private void WriteWebHistory(string newSearch)
         {
             if (Searches.Contains(newSearch)) return;
-            using (var fileStream = File.AppendText(string.Concat(Environment.CurrentDirectory, "\\searches")))
+            var baseDir = System.Reflection.Assembly.GetEntryAssembly().Location.Replace("TinyVideoPlayer.exe", "");
+            using (var fileStream = File.AppendText(string.Concat(baseDir, "\\searches")))
                 fileStream.Write(newSearch + ";");
 
-            Searches = File.ReadAllText(string.Concat(Environment.CurrentDirectory, "\\searches"))
+            Searches = File.ReadAllText(string.Concat(baseDir, "\\searches"))
                 .Split(';').Where(x => !string.IsNullOrWhiteSpace(x)).Reverse().ToList();
             MixedValues = Searches.ToList();
         }

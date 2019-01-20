@@ -103,10 +103,13 @@ namespace TinyVideoPlayer
 
             IsRepeating = true;
             UseAnimation = true;
+
             OriginMouseSpeed = (uint)System.Windows.Forms.SystemInformation.MouseSpeed;
             Topmost = true;
 
-            var vlcLibDirectory = new DirectoryInfo(Path.Combine(Environment.CurrentDirectory, "libvlc", IntPtr.Size == 4 ? "win-x86" : "win-x64"));
+            var vlcLibDirectory = new DirectoryInfo(Path.Combine(
+                System.Reflection.Assembly.GetEntryAssembly().Location.Replace("TinyVideoPlayer.exe", ""),
+                "libvlc", IntPtr.Size == 4 ? "win-x86" : "win-x64"));
             var options = new []
             {
                 //"--file-logging", "-vvv", "--extraintf=logger", "--logfile=Logs.log",
@@ -122,6 +125,7 @@ namespace TinyVideoPlayer
             VideoControl.SourceProvider.MediaPlayer.MediaChanged += MediaPlayer_MediaChanged;
             VideoControl.SourceProvider.MediaPlayer.PositionChanged += MediaPlayer_PositionChanged;
             VideoControl.SourceProvider.MediaPlayer.EncounteredError += MediaPlayer_EncounteredError;
+            VideoControl.Loaded += VideoControl_Loaded;
             DropZone.MouseWheel += DropZone_MouseWheel;
             DropZone.Drop += DropZone_Drop;
             DropZone.SizeChanged += DropZone_SizeChanged;
@@ -154,7 +158,7 @@ namespace TinyVideoPlayer
             this.PreviewMouseMove += MainWindow_PreviewMouseMove;
             this.MouseEnter += MainWindow_MouseEnter;
             this.MouseLeave += MainWindow_MouseLeave;
-
+            
             #endregion // Events subscribing
 
             #region Init bindings
@@ -235,7 +239,7 @@ namespace TinyVideoPlayer
             ThumbButton.Visibility = Visibility.Hidden;
             FavoriteButton.Visibility = Visibility.Hidden;
             ToggleRepeatButton.Visibility = Visibility.Hidden;
-
+            
             #endregion //Init Visibility states
         }
 
@@ -245,6 +249,16 @@ namespace TinyVideoPlayer
         delegate void VlcRepeatDelegate(Uri fileUri, string[] pars);
 
         #region Events
+
+        /// <summary>
+        /// If arg, play it.
+        /// </summary>
+        private void VideoControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(App.Arg)) return;
+            CurrentFile = new Uri(App.Arg);
+            Play(CurrentFile);
+        }
 
         /// <summary>
         /// If window clicked, set opacity to 1.
