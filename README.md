@@ -10,9 +10,9 @@ A tiny video player with a simple design.
 * Search and play Youtube videos ...
 
 The search feature has some flaws, better use your mouse to select item.
+It needs an ApiKey => https://console.cloud.google.com/apis/ then paste your key in a "apiKey" file inside bin/Release folder.
 
 Use Vlc.DotNet
-It needs an ApiKey => https://console.cloud.google.com/apis/ then paste your key in a "apiKey" file inside bin/Release folder.
 
 ![screenshot tinyplayer](https://raw.github.com/Crmbl/TinyVideoPlayer/master/TinyVideoPlayer/Capture.PNG)
 
