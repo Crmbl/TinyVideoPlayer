@@ -51,7 +51,7 @@ namespace TinyVideoPlayer
         /// <summary>
         /// Defines the opacity to set.
         /// </summary>
-        private const double OpacityLevel = 0.3;
+        private const double OpacityLevel = 0.1;
 
         #endregion //Constants
 
