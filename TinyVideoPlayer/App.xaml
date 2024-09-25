@@ -6,160 +6,171 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              StartupUri="MainWindow.xaml"> 
     <Application.Resources>
-        <converters:OffsetConverter x:Key="OffsetConverter" />
-        <converters:BooleanToVisibilityConverter x:Key="VisibilityConverter" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <materialDesign:BundledTheme BaseTheme="Dark" PrimaryColor="Red" SecondaryColor="Indigo" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesign3.Defaults.xaml" />
+            </ResourceDictionary.MergedDictionaries>
 
-        <Style x:Key="WindowStyle" TargetType="Window">
-            <Setter Property="WindowStyle" Value="None" />
-            <Setter Property="Title" Value="TinyVideoPlayer" />
-            <Setter Property="Height" Value="400" />
-            <Setter Property="Width" Value="600" />
-            <Setter Property="ResizeMode" Value="CanResize" />
-            <Setter Property="Background" Value="Black" />
-            <Setter Property="AllowsTransparency" Value="True" />
-        </Style>
+            <converters:OffsetConverter x:Key="OffsetConverter" />
+            <converters:BooleanToVisibilityConverter x:Key="VisibilityConverter" />
 
-        <Style x:Key="BrowserStyle" TargetType="Window">
-            <Setter Property="Title" Value="YTBrowser" />
-            <Setter Property="Height" Value="720" />
-            <Setter Property="Width" Value="1198" />
-            <Setter Property="ShowInTaskbar" Value="False" />
-            <Setter Property="ShowActivated" Value="True" />
-            <Setter Property="Topmost" Value="True" />
-            <Setter Property="ResizeMode" Value="NoResize" />
-            <Setter Property="TextElement.Foreground" Value="{DynamicResource MaterialDesignBody}" />
-            <Setter Property="TextElement.FontWeight" Value="Regular" />
-            <Setter Property="TextElement.FontSize" Value="13" />
-            <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
-            <Setter Property="TextOptions.TextRenderingMode" Value="Auto" />
-            <Setter Property="Background" Value="{DynamicResource MaterialDesignPaper}" />
-            <Setter Property="FontFamily" Value="{DynamicResource MaterialDesignFont}" />
-        </Style>
+            <Style x:Key="WindowStyle" TargetType="Window">
+                <Setter Property="WindowStyle" Value="None" />
+                <Setter Property="Title" Value="Tiny Video Player" />
+                <Setter Property="Height" Value="400" />
+                <Setter Property="Width" Value="600" />
+                <Setter Property="ResizeMode" Value="CanResize" />
+                <Setter Property="Background" Value="Black" />
+                <Setter Property="AllowsTransparency" Value="True" />
+            </Style>
 
-        <Style x:Key="CanvasStyle" TargetType="Canvas">
-            <Setter Property="AllowDrop" Value="True" />
-            <Setter Property="ClipToBounds" Value="True" />
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
+            <Style x:Key="ButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignFloatingActionButton}">
+                <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp3" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="Height" Value="45" />
+                <Setter Property="Width" Value="45" />
+                <Setter Property="Margin" Value="10,0" />
+            </Style>
 
-        <Style x:Key="VlcStyle" TargetType="wpf:VlcControl">
-            <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
-        </Style>
+            <Style x:Key="DarkButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignFloatingActionDarkButton}">
+                <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp3" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="Height" Value="45" />
+                <Setter Property="Width" Value="45" />
+            </Style>
 
-        <Style x:Key="TextStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="40" />
-            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
-            <Setter Property="FontFamily" Value="{DynamicResource MaterialDesignFont}" />
-            <Setter Property="TextAlignment" Value="Center" />
-            <Setter Property="TextWrapping" Value="WrapWithOverflow" />
-        </Style>
+            <Style x:Key="RaisedButtonStyle" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+                <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp3" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="Height" Value="45" />
+                <Setter Property="Width" Value="130" />
+                <Setter Property="Margin" Value="0,0,10,0" />
+            </Style>
 
-        <Style x:Key="MainGridStyle" TargetType="Grid">
-            <Setter Property="ClipToBounds" Value="True" />
-        </Style>
+            <Style x:Key="CanvasStyle" TargetType="Canvas">
+                <Setter Property="AllowDrop" Value="True" />
+                <Setter Property="ClipToBounds" Value="True" />
+                <Setter Property="Background" Value="Transparent" />
+            </Style>
 
-        <Style x:Key="BorderStyle" TargetType="Border">
-            <Setter Property="BorderThickness" Value="2" />
-            <Setter Property="BorderBrush" Value="#795548" />
-        </Style>
+            <Style x:Key="VlcStyle" TargetType="wpf:VlcControl">
+                <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+            </Style>
 
-        <Style x:Key="MediaGridStyle" TargetType="Grid">
-            <Setter Property="MaxWidth" Value="255" />
-            <Setter Property="Height" Value="60" />
-            <Setter Property="VerticalAlignment" Value="Top" />
-            <Setter Property="ClipToBounds" Value="True" />
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
+            <Style x:Key="TextStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="40" />
+                <Setter Property="Foreground" Value="{DynamicResource MaterialDesignBody}" />
+                <Setter Property="FontFamily" Value="{DynamicResource MaterialDesignFont}" />
+                <Setter Property="TextAlignment" Value="Center" />
+                <Setter Property="TextWrapping" Value="WrapWithOverflow" />
+            </Style>
 
-        <Style x:Key="MenuGridStyle" TargetType="Grid">
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
+            <Style x:Key="MainGridStyle" TargetType="Grid">
+                <Setter Property="ClipToBounds" Value="True" />
+            </Style>
 
-        <Style x:Key="SoundGridStyle" TargetType="Grid">
-            <Setter Property="MaxHeight" Value="180" />
-            <Setter Property="Width" Value="60" />
-            <Setter Property="HorizontalAlignment" Value="Right" />
-            <Setter Property="ClipToBounds" Value="True" />
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
+            <Style x:Key="BorderStyle" TargetType="Border">
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="BorderBrush" Value="#795548" />
+            </Style>
 
-        <Style x:Key="ToolGridStyle" TargetType="Grid">
-            <Setter Property="MaxHeight" Value="60" />
-            <Setter Property="Width" Value="60" />
-            <Setter Property="HorizontalAlignment" Value="Left" />
-            <Setter Property="ClipToBounds" Value="True" />
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
+            <Style x:Key="MediaGridStyle" TargetType="Grid">
+                <Setter Property="MaxWidth" Value="195" />
+                <Setter Property="Height" Value="60" />
+                <Setter Property="VerticalAlignment" Value="Top" />
+                <Setter Property="ClipToBounds" Value="True" />
+                <Setter Property="Background" Value="Transparent" />
+            </Style>
 
-        <Style x:Key="TimeGrid" TargetType="Grid">
-            <Setter Property="MaxHeight" Value="45" />
-            <Setter Property="Width" Value="NaN" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="VerticalAlignment" Value="Bottom" />
-            <Setter Property="ClipToBounds" Value="True" />
-            <Setter Property="Background" Value="Transparent" />
-        </Style>
+            <Style x:Key="MenuGridStyle" TargetType="Grid">
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="Background" Value="Transparent" />
+            </Style>
 
-        <Style x:Key="SliderStyle" TargetType="Slider">
-            <Setter Property="Height" Value="120" />
-            <Setter Property="Width" Value="45" />
-            <Setter Property="Minimum" Value="0" />
-            <Setter Property="Maximum" Value="1" />
-            <Setter Property="IsMoveToPointEnabled" Value="True" />
-            <Setter Property="Orientation" Value="Vertical" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type Slider}">
-                        <Slider Orientation="Vertical"
-                                materialDesign:ShadowAssist.ShadowDepth="Depth3"
-                                materialDesign:ShadowAssist.ShadowEdges="Bottom,Right"
-                                Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Slider}}, Path=Value, Mode=TwoWay}"
-                                Height="110" 
-                                Width="18" 
-                                ForceCursor="True"
-                                IsMoveToPointEnabled="True"
-                                Minimum="0"
-                                Maximum="1"
-                                Cursor="Hand"
-                                Margin="12, 0"/>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+            <Style x:Key="SoundGridStyle" TargetType="Grid">
+                <Setter Property="MaxHeight" Value="205" />
+                <Setter Property="Width" Value="55" />
+                <Setter Property="HorizontalAlignment" Value="Right" />
+                <Setter Property="ClipToBounds" Value="True" />
+                <Setter Property="Background" Value="Transparent" />
+            </Style>
 
-        <Style x:Key="SliderStyleBottom" TargetType="Slider">
-            <Setter Property="VerticalAlignment" Value="Bottom" />
-            <Setter Property="Height" Value="45" />
-            <Setter Property="Minimum" Value="0" />
-            <Setter Property="Maximum" Value="1" />
-            <Setter Property="IsMoveToPointEnabled" Value="True" />
-            <Setter Property="Orientation" Value="Horizontal" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type Slider}">
-                        <Slider Orientation="Horizontal" 
-                                materialDesign:ShadowAssist.ShadowDepth="Depth3"
-                                materialDesign:ShadowAssist.ShadowEdges="Bottom,Right"
-                                Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Slider}}, Path=Value, Mode=TwoWay}"
-                                Height="18" 
-                                Width="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Slider}}, 
-                                        Path=ActualWidth, Converter={StaticResource OffsetConverter}, ConverterParameter='inside'}" 
-                                ForceCursor="True"
-                                IsMoveToPointEnabled="True"
-                                Minimum="0"
-                                Maximum="1"
-                                Cursor="Hand"
-                                Margin="0, 12"/>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+            <Style x:Key="ToolGridStyle" TargetType="Grid">
+                <Setter Property="MaxHeight" Value="60" />
+                <Setter Property="Width" Value="60" />
+                <Setter Property="HorizontalAlignment" Value="Left" />
+                <Setter Property="ClipToBounds" Value="True" />
+                <Setter Property="Background" Value="Transparent" />
+            </Style>
 
-        <BitmapImage x:Key="PauseImage" UriSource="/Resources/Images/pause.ico" />
-        <BitmapImage x:Key="PlayImage" UriSource="/Resources/Images/play.ico" />
-        <BitmapImage x:Key="BookmarkedImage" UriSource="/Resources/Images/bookmarked.ico" />
-        <BitmapImage x:Key="BookmarkImage" UriSource="/Resources/Images/bookmark.ico" />
+            <Style x:Key="TimeGrid" TargetType="Grid">
+                <Setter Property="Height" Value="55" />
+                <Setter Property="Width" Value="NaN" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="VerticalAlignment" Value="Bottom" />
+                <Setter Property="ClipToBounds" Value="True" />
+                <Setter Property="Background" Value="Transparent" />
+            </Style>
+
+            <Style x:Key="SliderStyle" TargetType="Slider">
+                <Setter Property="Height" Value="120" />
+                <Setter Property="Width" Value="Auto" />
+                <Setter Property="Minimum" Value="0" />
+                <Setter Property="Maximum" Value="200" />
+                <Setter Property="IsMoveToPointEnabled" Value="True" />
+                <Setter Property="Orientation" Value="Vertical" />
+                <Setter Property="Margin" Value="5, 12, 0, 5" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Slider}">
+                            <Slider Orientation="Vertical"
+                                    materialDesign:ElevationAssist.Elevation="Dp7"
+                                    Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Slider}}, Path=Value, Mode=TwoWay}"
+                                    Height="110" 
+                                    Width="25" 
+                                    ForceCursor="True"
+                                    IsMoveToPointEnabled="True"
+                                    Minimum="0"
+                                    Maximum="200"
+                                    Cursor="Hand"
+                                    Margin="12, 0"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="SliderStyleBottom" TargetType="Slider">
+                <Setter Property="VerticalAlignment" Value="Bottom" />
+                <Setter Property="Height" Value="Auto" />
+                <Setter Property="Minimum" Value="0" />
+                <Setter Property="Maximum" Value="1" />
+                <Setter Property="IsMoveToPointEnabled" Value="True" />
+                <Setter Property="Orientation" Value="Horizontal" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type Slider}">
+                            <Slider Orientation="Horizontal" 
+                                    materialDesign:ElevationAssist.Elevation="Dp7"
+                                    Value="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Slider}}, Path=Value, Mode=TwoWay}"
+                                    Height="25" 
+                                    Width="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Slider}}, Path=ActualWidth, Converter={StaticResource OffsetConverter}, ConverterParameter='inside'}" 
+                                    ForceCursor="True"
+                                    IsMoveToPointEnabled="True"
+                                    Minimum="0"
+                                    Maximum="1"
+                                    Cursor="Hand"
+                                    Margin="0, 12"/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <BitmapImage x:Key="PauseImage" UriSource="/Resources/Images/pause.ico" />
+            <BitmapImage x:Key="PlayImage" UriSource="/Resources/Images/play.ico" />
+            <BitmapImage x:Key="BookmarkedImage" UriSource="/Resources/Images/bookmarked.ico" />
+            <BitmapImage x:Key="BookmarkImage" UriSource="/Resources/Images/bookmark.ico" />
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

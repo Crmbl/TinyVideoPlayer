@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -9,13 +10,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using MaterialDesignThemes.Wpf;
-using Microsoft.Win32;
 using TinyVideoPlayer.Converters;
 using TinyVideoPlayer.Utils;
-using TinyVideoPlayer.Views;
 using Vlc.DotNet.Core;
-using YoutubeExplode;
-using YoutubeExplode.Models.MediaStreams;
 
 namespace TinyVideoPlayer
 {
@@ -108,7 +105,7 @@ namespace TinyVideoPlayer
             Topmost = true;
 
             var vlcLibDirectory = new DirectoryInfo(Path.Combine(
-                System.Reflection.Assembly.GetEntryAssembly().Location.Replace("TinyVideoPlayer.exe", ""),
+                System.Reflection.Assembly.GetEntryAssembly().Location.Replace("TinyVideoPlayer.dll", ""),
                 "libvlc", IntPtr.Size == 4 ? "win-x86" : "win-x64"));
             var options = new []
             {
@@ -144,7 +141,6 @@ namespace TinyVideoPlayer
             ResizeButton.Click += MediaButton_ButtonClick;
             MaximizeButton.Click += MediaButton_ButtonClick;
             FindMediaButton.Click += MediaButton_ButtonClick;
-            BrowserButton.Click += MediaButton_ButtonClick;
             ToggleMuteButton.Click += MediaButton_ButtonClick;
             ToggleRepeatButton.Click += MediaButton_ButtonClick;
             VolumeSlider.ValueChanged += VolumeSlider_ValueChanged;
@@ -230,7 +226,6 @@ namespace TinyVideoPlayer
 
             ResizeButton.Visibility = Visibility.Hidden;
             FindMediaButton.Visibility = Visibility.Hidden;
-            BrowserButton.Visibility = Visibility.Hidden;
             MaximizeButton.Visibility = Visibility.Hidden;
             VolumeSlider.Visibility = Visibility.Hidden;
             ToggleMuteButton.Visibility = Visibility.Hidden;
@@ -317,9 +312,8 @@ namespace TinyVideoPlayer
         {
             if (IsRepeating)
             {
-                VlcRepeatDelegate vlcDelegate = VideoControl.SourceProvider.MediaPlayer.Play;
+                ThreadPool.QueueUserWorkItem(_ => VideoControl.SourceProvider.MediaPlayer.Play(CurrentFile));
                 Dispatcher.Invoke(() => { TimeSlider.Value = 0; });
-                vlcDelegate.BeginInvoke(CurrentFile, new string[] { }, null, null);
             }
             else
             {
@@ -467,13 +461,6 @@ namespace TinyVideoPlayer
                 CurrentFile = new Uri(files.First());
                 Play(CurrentFile);
             }
-            else if (e.Data.GetDataPresent(DataFormats.StringFormat))
-            {
-                var link = (string)e.Data.GetData(DataFormats.StringFormat);
-                if (string.IsNullOrWhiteSpace(link)) return;
-
-                PlayYoutubeVideo(link);
-            }
         }
 
         /// <summary>
@@ -559,14 +546,12 @@ namespace TinyVideoPlayer
             {
                 AnimationTools.FadeIn(ResizeButton);
                 AnimationTools.FadeIn(FindMediaButton);
-                AnimationTools.FadeIn(BrowserButton);
                 AnimationTools.FadeIn(MaximizeButton);
             }
             else
             {
                 ResizeButton.Visibility = Visibility.Visible;
                 FindMediaButton.Visibility = Visibility.Visible;
-                BrowserButton.Visibility = Visibility.Visible;
                 MaximizeButton.Visibility = Visibility.Visible;
             }
         }
@@ -580,14 +565,12 @@ namespace TinyVideoPlayer
             {
                 AnimationTools.FadeOut(ResizeButton);
                 AnimationTools.FadeOut(FindMediaButton);
-                AnimationTools.FadeOut(BrowserButton);
                 AnimationTools.FadeOut(MaximizeButton);
             }
             else
             {
                 ResizeButton.Visibility = Visibility.Hidden;
                 FindMediaButton.Visibility = Visibility.Hidden;
-                BrowserButton.Visibility = Visibility.Hidden;
                 MaximizeButton.Visibility = Visibility.Hidden;
             }
         }
@@ -714,63 +697,39 @@ namespace TinyVideoPlayer
                     if (VideoControl.SourceProvider.MediaPlayer.IsPlaying())
                         VideoControl.SourceProvider.MediaPlayer.Pause();
 
-                    var dialog = new OpenFileDialog { Filter = "Tous les fichiers (*.*)|*.*" };
-                    var result = dialog.ShowDialog();
-                    if (result != null && !result.Value) return;
+                    var dialog = new System.Windows.Forms.OpenFileDialog { Filter = "Tous les fichiers vidéos|*.avi;*.mp4;*.wmv|Tous les fichiers (*.*)|*.*" };
+                    dialog.ShowDialog();
+                    if (dialog.FileName == string.Empty)
+                        break;
 
                     CurrentFile = new Uri(dialog.FileName);
                     Play(CurrentFile);
                     break;
 
-                case "BrowserButton":
-                case "BrowserButtonBis":
-                    if (VideoControl.SourceProvider.MediaPlayer.IsPlaying())
-                        VideoControl.SourceProvider.MediaPlayer.Pause();
-
-                    var browser = new YTBrowser(this);
-                    browser.Show();
-                    break;
-
                 case "ToggleMuteButton":
-                    Dispatcher.Invoke(() =>
+                    var currentVolume = VideoControl.SourceProvider.MediaPlayer.Audio.Volume;
+                    if (currentVolume > 0)
                     {
-                        VideoControl.SourceProvider.MediaPlayer.Audio.ToggleMute();
-                        if (VideoControl.SourceProvider.MediaPlayer.Audio.IsMute)
-                        {
-                            VolumeSlider.Value = 0;
-                            MuteIcon.Kind = PackIconKind.VolumeMute;
-                        }
-                        else
-                        {
-                            VolumeSlider.Value = 0.5;
-                            MuteIcon.Kind = PackIconKind.VolumeMedium;
-                        }
-                    });
-                    break;
-
-                case "MaximizeButton":
-                    if (WindowState != WindowState.Maximized)
-                    {
-                        WindowState = WindowState.Maximized;
-                        MaximizeIcon.Kind = PackIconKind.ArrowCollapse;
+                        VolumeSlider.Value = 0;
+                        MuteIcon.Kind = PackIconKind.VolumeMute;
                     }
                     else
                     {
-                        WindowState = WindowState.Normal;
-                        MaximizeIcon.Kind = PackIconKind.ArrowExpand;
+                        VolumeSlider.Value = 100;
+                        MuteIcon.Kind = PackIconKind.VolumeHigh;
                     }
+
+                    break;
+
+                case "MaximizeButton":
+                    var isMaximized = WindowState != WindowState.Maximized;
+                    WindowState = isMaximized ? WindowState.Maximized : WindowState.Normal;
+                    MaximizeIcon.Kind = isMaximized ? PackIconKind.ArrowCollapse : PackIconKind.ArrowExpand;
                     break;
 
                 case "ToggleRepeatButton":
                     IsRepeating = !IsRepeating;
-                    if (IsRepeating)
-                    {
-                        RepeatIcon.Kind = PackIconKind.Repeat;
-                    }
-                    else
-                    {
-                        RepeatIcon.Kind = PackIconKind.RepeatOff;
-                    }
+                    RepeatIcon.Kind = IsRepeating ? PackIconKind.Repeat : PackIconKind.RepeatOff;
                     break;
             }
         }
@@ -780,15 +739,15 @@ namespace TinyVideoPlayer
         /// </summary>
         private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            var value = (int)Math.Round(e.NewValue * 200, 0);
+            var value = (int)Math.Floor(e.NewValue);
             Dispatcher.Invoke(() => { VideoControl.SourceProvider.MediaPlayer.Audio.Volume = value; });
 
-            if (!VideoControl.SourceProvider.MediaPlayer.Audio.IsMute || value == 0) return;
-            Dispatcher.Invoke(() =>
-            {
-                VideoControl.SourceProvider.MediaPlayer.Audio.ToggleMute();
+            if (value > 0 && value < 100)
                 MuteIcon.Kind = PackIconKind.VolumeMedium;
-            });
+            else if (value >= 100)
+                MuteIcon.Kind = PackIconKind.VolumeHigh;
+            else
+                MuteIcon.Kind = PackIconKind.VolumeMute;
         }
 
         /// <summary>
@@ -864,40 +823,28 @@ namespace TinyVideoPlayer
         /// <summary>
         /// Private Play method.
         /// </summary>
-        /// <param name="fileName"></param>
-        private void Play(Uri fileName)
+        /// <param name="uri"></param>
+        private void Play(Uri uri)
         {
             if (DropMenu.Visibility == Visibility.Visible)
                 DropMenu.Visibility = Visibility.Collapsed;
 
-            VideoControl.SourceProvider.MediaPlayer.Play(fileName);
+            var filename = new FileInfo(uri.PathAndQuery);
+            string[] mediaExtensions = { ".AVI", ".MP4", ".WMV", };
+            if (!mediaExtensions.Contains(filename.Extension.ToUpper()))
+                return;
+
+            VideoControl.SourceProvider.MediaPlayer.Play(uri);
             TimeSlider.Value = 0;
-            VolumeSlider.Value = (double)VideoControl.SourceProvider.MediaPlayer.Audio.Volume / 200;
+            VolumeSlider.Value = VideoControl.SourceProvider.MediaPlayer.Audio.Volume;
+            if (VolumeSlider.Value == 0)
+                MuteIcon.Kind = PackIconKind.VolumeMute;
+            else if (VolumeSlider.Value > 0 && VolumeSlider.Value < 100)
+                MuteIcon.Kind = PackIconKind.VolumeMedium;
+            else
+                MuteIcon.Kind = PackIconKind.VolumeHigh;
+
             Keyboard.Focus(this);
-        }
-
-        /// <summary>
-        /// Private Play for youtube video.
-        /// </summary>
-        public async void PlayYoutubeVideo(string fileName)
-        {
-            var youtubeVidId = YoutubeClient.ParseVideoId(fileName);
-            var client = new YoutubeClient();
-
-            var video = await client.GetVideoMediaStreamInfosAsync(youtubeVidId);
-            var muxed = video.Muxed.WithHighestVideoQuality();
-            CurrentFile = new Uri(muxed.Url);
-
-            if (DropMenu.Visibility == Visibility.Visible)
-                DropMenu.Visibility = Visibility.Collapsed;
-
-            VideoControl.SourceProvider.MediaPlayer.Play(muxed.Url);
-            Dispatcher.Invoke(() =>
-            {
-                TimeSlider.Value = 0;
-                VolumeSlider.Value = (double) VideoControl.SourceProvider.MediaPlayer.Audio.Volume / 200;
-                Keyboard.Focus(this);
-            });
         }
 
         #endregion //Methods
