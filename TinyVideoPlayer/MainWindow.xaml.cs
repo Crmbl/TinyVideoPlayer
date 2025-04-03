@@ -296,7 +296,7 @@ namespace TinyVideoPlayer
         {
             Dispatcher.Invoke(() =>
             {
-                if (!TimeSlider.IsMouseCaptured)
+                if (!TimeSlider.IsMouseCaptured && VideoControl.SourceProvider.MediaPlayer != null)
                     TimeSlider.Value = VideoControl.SourceProvider.MediaPlayer.Position;
             });
         }
