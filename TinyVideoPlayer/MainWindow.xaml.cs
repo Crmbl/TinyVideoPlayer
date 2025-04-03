@@ -70,11 +70,6 @@ namespace TinyVideoPlayer
         private uint OriginMouseSpeed { get; set; }
 
         /// <summary>
-        /// Defines is repeating.
-        /// </summary>
-        public bool IsRepeating { get; set; }
-
-        /// <summary>
         /// Current playing file.
         /// </summary>
         public Uri CurrentFile { get; set; }
@@ -98,7 +93,6 @@ namespace TinyVideoPlayer
         {
             InitializeComponent();
 
-            IsRepeating = true;
             UseAnimation = true;
 
             OriginMouseSpeed = (uint)System.Windows.Forms.SystemInformation.MouseSpeed;
@@ -110,7 +104,7 @@ namespace TinyVideoPlayer
             var options = new []
             {
                 //"--file-logging", "-vvv", "--extraintf=logger", "--logfile=Logs.log",
-                "--no-ignore-config"
+                "--no-ignore-config", $"--input-repeat={long.MaxValue}"
             };
 
             VideoControl.SourceProvider.CreatePlayer(vlcLibDirectory, options);
@@ -118,7 +112,6 @@ namespace TinyVideoPlayer
 
             #region Events subscribing
 
-            VideoControl.SourceProvider.MediaPlayer.EndReached += MediaPlayer_EndReached;
             VideoControl.SourceProvider.MediaPlayer.MediaChanged += MediaPlayer_MediaChanged;
             VideoControl.SourceProvider.MediaPlayer.PositionChanged += MediaPlayer_PositionChanged;
             VideoControl.SourceProvider.MediaPlayer.EncounteredError += MediaPlayer_EncounteredError;
@@ -134,15 +127,12 @@ namespace TinyVideoPlayer
             MediaGrid.MouseLeave += MediaGrid_MouseLeave;
             SoundGrid.MouseEnter += SoundGrid_MouseEnter;
             SoundGrid.MouseLeave += SoundGrid_MouseLeave;
-            ToolGrid.MouseEnter += ToolGrid_MouseEnter;
-            ToolGrid.MouseLeave += ToolGrid_MouseLeave;
             TimeGrid.MouseEnter += TimeGrid_MouseEnter;
             TimeGrid.MouseLeave += TimeGrid_MouseLeave;
             ResizeButton.Click += MediaButton_ButtonClick;
             MaximizeButton.Click += MediaButton_ButtonClick;
             FindMediaButton.Click += MediaButton_ButtonClick;
             ToggleMuteButton.Click += MediaButton_ButtonClick;
-            ToggleRepeatButton.Click += MediaButton_ButtonClick;
             VolumeSlider.ValueChanged += VolumeSlider_ValueChanged;
             TimeSlider.ValueChanged += TimeSlider_ValueChanged;
             TimeSlider.PreviewMouseDown += TimeSlider_PreviewMouseDown;
@@ -233,15 +223,9 @@ namespace TinyVideoPlayer
             TimeSlider.Visibility = Visibility.Hidden;
             ThumbButton.Visibility = Visibility.Hidden;
             FavoriteButton.Visibility = Visibility.Hidden;
-            ToggleRepeatButton.Visibility = Visibility.Hidden;
             
             #endregion //Init Visibility states
         }
-
-        /// <summary>
-        /// Used for the repeat feature.
-        /// </summary>
-        delegate void VlcRepeatDelegate(Uri fileUri, string[] pars);
 
         #region Events
 
@@ -306,26 +290,6 @@ namespace TinyVideoPlayer
         }
 
         /// <summary>
-        /// Repeat feature implementation.
-        /// </summary>
-        private void MediaPlayer_EndReached(object sender, VlcMediaPlayerEndReachedEventArgs e)
-        {
-            if (IsRepeating)
-            {
-                ThreadPool.QueueUserWorkItem(_ => VideoControl.SourceProvider.MediaPlayer.Play(CurrentFile));
-                Dispatcher.Invoke(() => { TimeSlider.Value = 0; });
-            }
-            else
-            {
-                Dispatcher.Invoke(() =>
-                {
-                    if (DropMenu.Visibility == Visibility.Collapsed)
-                        DropMenu.Visibility = Visibility.Visible;
-                });
-            }
-        }
-
-        /// <summary>
         /// Handles the slider movement when the video is playing.
         /// </summary>
         private void MediaPlayer_PositionChanged(object sender, VlcMediaPlayerPositionChangedEventArgs e)
@@ -379,18 +343,18 @@ namespace TinyVideoPlayer
             {
                 if (VideoControl.SourceProvider.MediaPlayer.IsPlaying())
                 {
-                    VideoControl.SourceProvider.MediaPlayer.Pause();
+                    ThreadPool.QueueUserWorkItem(_ => VideoControl.SourceProvider.MediaPlayer.Pause());
                     ThumbButton.ImageSource = Application.Current.Resources["PlayImage"] as BitmapImage;
                 }
                 else
                 {
-                    VideoControl.SourceProvider.MediaPlayer.Play();
+                    ThreadPool.QueueUserWorkItem(_ => VideoControl.SourceProvider.MediaPlayer.Play());
                     ThumbButton.ImageSource = Application.Current.Resources["PauseImage"] as BitmapImage;
                 }
             }
             else if (e.ChangedButton == MouseButton.Right)
             {
-                VideoControl.SourceProvider.Dispose();
+                ThreadPool.QueueUserWorkItem(_ => VideoControl.SourceProvider.Dispose());
                 Application.Current.Shutdown();
             }
         }
@@ -576,38 +540,6 @@ namespace TinyVideoPlayer
         }
 
         /// <summary>
-        /// Shows tool buttons.
-        /// </summary>
-        private void ToolGrid_MouseEnter(object sender, MouseEventArgs e)
-        {
-            if (!VideoControl.SourceProvider.MediaPlayer.CouldPlay) return;
-
-            if (UseAnimation)
-            {
-                AnimationTools.FadeIn(ToggleRepeatButton);
-            }
-            else
-            {
-                ToggleRepeatButton.Visibility = Visibility.Visible;
-            }
-        }
-
-        /// <summary>
-        /// Hides tool buttons.
-        /// </summary>
-        private void ToolGrid_MouseLeave(object sender, MouseEventArgs e)
-        {
-            if (UseAnimation)
-            {
-                AnimationTools.FadeOut(ToggleRepeatButton);
-            }
-            else
-            {
-                ToggleRepeatButton.Visibility = Visibility.Hidden;
-            }
-        }
-
-        /// <summary>
         /// Shows sound buttons.
         /// </summary>
         private void SoundGrid_MouseEnter(object sender, MouseEventArgs e)
@@ -695,7 +627,7 @@ namespace TinyVideoPlayer
                 case "FindMediaButton":
                 case "FindMediaButtonBis":
                     if (VideoControl.SourceProvider.MediaPlayer.IsPlaying())
-                        VideoControl.SourceProvider.MediaPlayer.Pause();
+                        ThreadPool.QueueUserWorkItem(_ => VideoControl.SourceProvider.MediaPlayer.Pause());
 
                     var dialog = new System.Windows.Forms.OpenFileDialog { Filter = "Tous les fichiers vidéos|*.avi;*.mp4;*.wmv|Tous les fichiers (*.*)|*.*" };
                     dialog.ShowDialog();
@@ -726,11 +658,6 @@ namespace TinyVideoPlayer
                     WindowState = isMaximized ? WindowState.Maximized : WindowState.Normal;
                     MaximizeIcon.Kind = isMaximized ? PackIconKind.ArrowCollapse : PackIconKind.ArrowExpand;
                     break;
-
-                case "ToggleRepeatButton":
-                    IsRepeating = !IsRepeating;
-                    RepeatIcon.Kind = IsRepeating ? PackIconKind.Repeat : PackIconKind.RepeatOff;
-                    break;
             }
         }
 
@@ -740,7 +667,7 @@ namespace TinyVideoPlayer
         private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             var value = (int)Math.Floor(e.NewValue);
-            Dispatcher.Invoke(() => { VideoControl.SourceProvider.MediaPlayer.Audio.Volume = value; });
+            ThreadPool.QueueUserWorkItem(_ => VideoControl.SourceProvider.MediaPlayer.Audio.Volume = value);
 
             if (value > 0 && value < 100)
                 MuteIcon.Kind = PackIconKind.VolumeMedium;
@@ -756,7 +683,7 @@ namespace TinyVideoPlayer
         private void TimeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (TimeSlider.IsMouseCaptured)
-                Dispatcher.Invoke(() => { VideoControl.SourceProvider.MediaPlayer.Position = (float) e.NewValue; });
+                ThreadPool.QueueUserWorkItem(_ => VideoControl.SourceProvider.MediaPlayer.Position = (float) e.NewValue);
         }
 
         /// <summary>
@@ -766,7 +693,7 @@ namespace TinyVideoPlayer
         {
 		    var result = MessageBox.Show($"{(sender as VlcMediaPlayer).State.ToString()}", "An error occured", MessageBoxButton.OK);
             if (result != MessageBoxResult.OK) return;
-            VideoControl.SourceProvider.Dispose();
+            ThreadPool.QueueUserWorkItem(_ => VideoControl.SourceProvider.Dispose());
             Application.Current.Shutdown();
         }
 
@@ -777,12 +704,12 @@ namespace TinyVideoPlayer
         {
             if (VideoControl.SourceProvider.MediaPlayer.IsPlaying())
             {
-                VideoControl.SourceProvider.MediaPlayer.Pause();
+                ThreadPool.QueueUserWorkItem(_ => VideoControl.SourceProvider.MediaPlayer.Pause());
                 ThumbButton.ImageSource = Application.Current.Resources["PlayImage"] as BitmapImage;
             }
             else
             {
-                VideoControl.SourceProvider.MediaPlayer.Play();
+                ThreadPool.QueueUserWorkItem(_ => VideoControl.SourceProvider.MediaPlayer.Play());
                 ThumbButton.ImageSource = Application.Current.Resources["PauseImage"] as BitmapImage;
             }
         }
@@ -834,7 +761,7 @@ namespace TinyVideoPlayer
             if (!mediaExtensions.Contains(filename.Extension.ToUpper()))
                 return;
 
-            VideoControl.SourceProvider.MediaPlayer.Play(uri);
+            ThreadPool.QueueUserWorkItem(_ => VideoControl.SourceProvider.MediaPlayer.Play(uri));
             TimeSlider.Value = 0;
             VolumeSlider.Value = VideoControl.SourceProvider.MediaPlayer.Audio.Volume;
             if (VolumeSlider.Value == 0)

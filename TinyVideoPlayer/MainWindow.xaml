@@ -20,57 +20,52 @@
         </TaskbarItemInfo>
     </Window.TaskbarItemInfo>
     <Border Style="{StaticResource BorderStyle}">
-    <Grid x:Name="MainGrid" Style="{StaticResource MainGridStyle}">
-        <Grid x:Name="MediaGrid" Style="{StaticResource MediaGridStyle}" Panel.ZIndex="110">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" x:Name="ResizeButton" Style="{StaticResource ButtonStyle}">
-                <materialDesign:PackIcon Kind="ArrowCollapseAll" />
-            </Button>
-            <Button Grid.Column="1" x:Name="MaximizeButton" Style="{StaticResource ButtonStyle}">
-                <materialDesign:PackIcon Kind="ArrowExpand" x:Name="MaximizeIcon" />
-            </Button>
-            <Button Grid.Column="2" x:Name="FindMediaButton" Style="{StaticResource ButtonStyle}">
-                <materialDesign:PackIcon Kind="FolderSearchOutline" />
-            </Button>
-        </Grid>
-        <Grid x:Name="SoundGrid" Style="{StaticResource SoundGridStyle}" Panel.ZIndex="110">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <Slider Grid.Row="0" x:Name="VolumeSlider" Style="{StaticResource SliderStyle}" />
-            <Button Grid.Row="1" x:Name="ToggleMuteButton" Margin="0,10,0,0" Style="{StaticResource ButtonStyle}">
-                <materialDesign:PackIcon Kind="VolumeHigh" x:Name="MuteIcon" />
-            </Button>
-        </Grid>
-        <Grid x:Name="ToolGrid" Style="{StaticResource ToolGridStyle}" Panel.ZIndex="110">
-            <Button x:Name="ToggleRepeatButton" Style="{StaticResource DarkButtonStyle}">
-                <materialDesign:PackIcon Kind="Repeat" x:Name="RepeatIcon" />
-            </Button>
-        </Grid>
-        <Canvas x:Name="DropZone" Style="{StaticResource CanvasStyle}" Panel.ZIndex="100">
-            <Grid x:Name="DropMenu" Style="{StaticResource MenuGridStyle}" Panel.ZIndex="110">
+        <Grid x:Name="MainGrid" Style="{StaticResource MainGridStyle}">
+            <Grid x:Name="MediaGrid" Style="{StaticResource MediaGridStyle}" Panel.ZIndex="110">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" x:Name="ResizeButton" Style="{StaticResource ButtonStyle}">
+                    <materialDesign:PackIcon Kind="ArrowCollapseAll" />
+                </Button>
+                <Button Grid.Column="1" x:Name="MaximizeButton" Style="{StaticResource ButtonStyle}">
+                    <materialDesign:PackIcon Kind="ArrowExpand" x:Name="MaximizeIcon" />
+                </Button>
+                <Button Grid.Column="2" x:Name="FindMediaButton" Style="{StaticResource ButtonStyle}">
+                    <materialDesign:PackIcon Kind="FolderSearchOutline" />
+                </Button>
+            </Grid>
+            <Grid x:Name="SoundGrid" Style="{StaticResource SoundGridStyle}" Panel.ZIndex="110">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" x:Name="DropText" Style="{StaticResource TextStyle}">
-                    DROP A VIDEO
-                </TextBlock>
-                <Button Grid.Row="1" x:Name="FindMediaButtonBis" Click="MediaButton_ButtonClick" Style="{StaticResource RaisedButtonStyle}">
-                    OPEN FOLDER
+                <Slider Grid.Row="0" x:Name="VolumeSlider" Style="{StaticResource SliderStyle}" />
+                <Button Grid.Row="1" x:Name="ToggleMuteButton" Margin="0,10,0,0" Style="{StaticResource ButtonStyle}">
+                    <materialDesign:PackIcon Kind="VolumeHigh" x:Name="MuteIcon" />
                 </Button>
             </Grid>
-        </Canvas>
-        <vlc:VlcControl x:Name="VideoControl" Style="{StaticResource VlcStyle}" />
-        <Grid x:Name="TimeGrid" Style="{StaticResource TimeGrid}" Panel.ZIndex="110">
-            <Slider x:Name="TimeSlider" Style="{StaticResource SliderStyleBottom}"
-                    Width="{Binding ElementName=DropZone, Path=ActualWidth, Converter={StaticResource OffsetConverter}, ConverterParameter='outside'}"/>
+            <Canvas x:Name="DropZone" Style="{StaticResource CanvasStyle}" Panel.ZIndex="100">
+                <Grid x:Name="DropMenu" Style="{StaticResource MenuGridStyle}" Panel.ZIndex="110">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" x:Name="DropText" Style="{StaticResource TextStyle}">
+                        DROP A VIDEO
+                    </TextBlock>
+                    <Button Grid.Row="1" x:Name="FindMediaButtonBis" Click="MediaButton_ButtonClick" Style="{StaticResource RaisedButtonStyle}">
+                        OPEN FOLDER
+                    </Button>
+                </Grid>
+            </Canvas>
+            <vlc:VlcControl x:Name="VideoControl" Style="{StaticResource VlcStyle}" />
+            <Grid x:Name="TimeGrid" Style="{StaticResource TimeGrid}" Panel.ZIndex="110">
+                <Slider x:Name="TimeSlider" Style="{StaticResource SliderStyleBottom}"
+                        Width="{Binding ElementName=DropZone, Path=ActualWidth, Converter={StaticResource OffsetConverter}, ConverterParameter='outside'}"/>
+            </Grid>
         </Grid>
-    </Grid>
     </Border>
 </Window>

@@ -72,7 +72,7 @@
 
             <Style x:Key="BorderStyle" TargetType="Border">
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="BorderBrush" Value="#795548" />
+                <Setter Property="BorderBrush" Value="#484848" />
             </Style>
 
             <Style x:Key="MediaGridStyle" TargetType="Grid">
